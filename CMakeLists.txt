@@ -12,6 +12,8 @@ project(ant_foraging)
 find_package(catkin REQUIRED COMPONENTS
   rospy
   geometry_msgs
+  nav_msgs
+  sensor_msgs
 )
 
 ##########################################
@@ -36,6 +38,8 @@ catkin_package(
   CATKIN_DEPENDS
     rospy
     geometry_msgs
+    nav_msgs
+    sensor_msgs
 )
 
 ###########
