@@ -4,7 +4,7 @@
 ## Set minimum required version of cmake, project name and compile options ##
 #############################################################################
 cmake_minimum_required(VERSION 2.8.3)
-project(simple_motion)
+project(ant_foraging)
 
 ###########################################################################
 ## Find catkin packages and libraries for catkin and system dependencies ##
@@ -12,6 +12,8 @@ project(simple_motion)
 find_package(catkin REQUIRED COMPONENTS
   rospy
   geometry_msgs
+  nav_msgs
+  sensor_msgs
 )
 
 ##########################################
@@ -36,6 +38,8 @@ catkin_package(
   CATKIN_DEPENDS
     rospy
     geometry_msgs
+    nav_msgs
+    sensor_msgs
 )
 
 ###########
@@ -54,7 +58,7 @@ include_directories(
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
 catkin_install_python(PROGRAMS 
-  nodes/simple_motion
+  nodes/ant
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #The line above is important so that this file is interpreted with Python when running it.
 
+#The line above is important so that this file is interpreted with Python when running it.
+
 import numpy as np
 import random
 import rospy

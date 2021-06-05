@@ -67,7 +67,7 @@ class Ant():
 
         return direction
 
-    
+  
     def move(self, grid): # send to nest get the center coord. do the physical calc for moving the robot there
        # if you are out of bounds then stop moving
         # check if it has food or home
@@ -199,7 +199,6 @@ def main():
 
     # If interrupted, send a stop command.
     rospy.on_shutdown(ant_bot.stop)
-
 
 if __name__ == "__main__":
     """Run the main function."""
