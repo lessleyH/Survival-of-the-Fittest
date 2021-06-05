@@ -3,16 +3,23 @@
 
 # import of relevant libraries.
 import rospy # module for ROS APIs
+from geometry_msgs.msg import Twist # message type for cmd_vel
 
 class Ant():
+
+    def __init__(self):
+        self.name = "ant"
+        
     
 
-    def main():
-        """Main function."""
+def main():
+    """Main function."""
 
     
 
 
 if __name__ == "__main__":
     """Run the main function."""
+
+
     main()
