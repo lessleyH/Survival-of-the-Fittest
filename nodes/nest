@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+#The line above is important so that this file is interpreted with Python when running it.
+
+import numpy as np
+import random
+import rospy
+
+class Nest():
+    def __init__(self):
+        print(42)
+
+
+def main():
+    """Main function."""
+    print(42)
+
+
+if __name__ == "__main__":
+    """Run the main function."""
+    rospy.init_node('Nest')
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

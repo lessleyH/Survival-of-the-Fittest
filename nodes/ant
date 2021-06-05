@@ -6,23 +6,24 @@ import random
 # import of relevant libraries.
 import rospy # module for ROS APIs
 from geometry_msgs.msg import PoseWithCovarianceStamped, Point  # Msg of the position of the robot
-# http://docs.ros.org/en/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
 
+# http://docs.ros.org/en/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
 from nav_msgs.msg import OccupancyGrid, GridCells  # Msg of the path
 
 class Ant():
-    def __init__(self, n, m, n_home, m_home, q, sigma_1, signma_2, mu):
+    def __init__(self, n, m,  q, sigma_1, signma_2, mu, grid):
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback, queue_size=1)
         self._pos_sub = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.pos_callback, queue_size=1)
-        self._coverage_pub = rospy.Publisher('/cells', GridCells, queue_size=1)
+        self._cmd_pub = rospy.Publisher('/cells', GridCells, queue_size=1)
 
+        self.loc =(n,m)
 
         self.map = None  # type: OccupancyGrid 
-        self.dists = None  # type: List[List[int]]
+        self.grid = None  # type: List[List[int]] Should just be 2D
         self.pos = None  # type: Pos   # self.loc = (n, m) location in python
         self.home_pos = None  # type: Pos
         self.measurements = None  # type: List[List[int]]
-        self.grid = None  # type: GridCells
+
         
         #TODO: reperesenting position in ros_stage
         self.dir = (1, 0) # Foward to the lef or to the right 
@@ -31,16 +32,105 @@ class Ant():
         self.removed = False
 
 
-    def randomize_direction(self):
-        direction = 0 
-        return direction 
+        self.q =q
+        self.sigma_1 = sigma_1
+        self.sigma_2 = signma_2
+        self.mu = mu
+        self.grid = False
+
+
+    def randomize_direction(self, grid):
+
+        p0 = grid.pheremones[self.loc[0], self.loc[1]+1] + grid.pheremones[self.loc[0]+1, self.loc[1]+1] + grid.pheremones[self.loc[0]-1, self.loc[1]+1]
+        p1 = grid.pheremones[self.loc[0]+1, self.loc[1]] + grid.pheremones[self.loc[0]+1, self.loc[1]+1] + grid.pheremones[self.loc[0]+1, self.loc[1]-1]
+        p2 = grid.pheremones[self.loc[0], self.loc[1]-1] + grid.pheremones[self.loc[0]+1, self.loc[1]-1] + grid.pheremones[self.loc[0]-1, self.loc[1]-1]
+        p3 = grid.pheremones[self.loc[0]-1, self.loc[1]] + grid.pheremones[self.loc[0]-1, self.loc[1]+1] + grid.pheremones[self.loc[0]-1, self.loc[1]-1]
+        
+        ps = p0 + p1 + p2 + p3
+        if ps != 0:
+            p0 /= ps
+            p1 /= ps
+            p2 /= ps
+            p3 /= ps
+            did = np.random.choice([0,1,2,3], 1, p=[p0,p1,p2,p3])
+
+        else:
+            did = np.random.choice(4, 1)
+        if did == 0: #TODO: Fix into actua values 
+            direction = (0, 1) #forward 
+        elif did == 1:
+            direction = (1, 0)#forward right
+        elif did == 2:
+            direction = (0, -1)# forward left
+
+        return direction
+
     
     def move(self, grid):
-        print(42)
+        if self.loc[0] == 0 or self.loc[1] == 0 or self.loc[0] == grid.occupancy.shape[0]-1 or self.loc[1] == grid.occupancy.shape[1]-1:
+            self.removed = True
+            print("Boarder!")
 
+        if not self.removed:
+            left_loc = (self.loc[0]+self.dir[1]+self.dir[0], self.loc[1]-self.dir[0]+self.dir[1])
+            front_loc = (self.loc[0]+self.dir[0], self.loc[1]+self.dir[1])
+            right_loc = (self.loc[0]-self.dir[1]+self.dir[0], self.loc[1]+self.dir[0]+self.dir[1])
+        
+            lp = grid.pheremones[left_loc[0], left_loc[1]]
+            fp = grid.pheremones[front_loc[0], front_loc[1]]
+            rp = grid.pheremones[right_loc[0], right_loc[1]]
+            
+            p_m = 0.5 * (1 + np.tanh((lp + fp + rp)/100 - 1))
+            if np.random.choice(2, 1, p=[1-p_m,p_m]):
+                c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
+                p_left = 1/c * (self.mu + lp)**2
+                p_front = 1/c * (self.mu + fp)**2
+                p_right = 1/c * (self.mu + rp)**2
+                
+                next_loc = np.random.choice(["left_loc","right_loc","front_loc"], 1, p=[p_left,p_right,p_front])
+                if next_loc == "left_loc" and grid.occupancy[left_loc[0], left_loc[1]] < Am:
+                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
+                    self.loc = left_loc
+                    grid.occupancy[self.loc[0], self.loc[1]] += 1
+                elif next_loc == "front_loc" and grid.occupancy[front_loc[0], front_loc[1]] < Am:
+                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
+                    self.loc = front_loc
+                    grid.occupancy[self.loc[0], self.loc[1]] += 1
+                elif next_loc == "right_loc" and grid.occupancy[right_loc[0], right_loc[1]] < Am:
+                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
+                    self.loc = right_loc
+                    grid.occupancy[self.loc[0], self.loc[1]] += 1
+
+                    
+                if grid.food[self.loc[0], self.loc[1]] > 0:
+                    if not self.hasfood:
+                        g.food[self.loc[0], self.loc[1]] -= 1
+                        self.dir = (self.dir[0]*-1, self.dir[1]*-1) # Flips direction
+                        self.hasfood = True
+                        
+                        
+                if (self.home[0]-1 < self.loc[0] < self.home[0]+1) and (self.home[1]-1 < self.loc[1] < self.home[1]+1) and self.hasfood:
+                    self.hasfood = False
+                    grid.occupancy[self.home[0], self.home[1]] -= 1
+                    grid.food_drop += 1
+                    self.removed = True
+                    print("Brought back food!")
+                    
+                    
+            if self.hasfood:
+                if grid.pheremones[self.loc[0], self.loc[1]] < self.sigma_2:
+                    grid.pheremones[self.loc[0],self.loc[1]] += self.q
+                    #TODO: Set the threshold for pheremone to be stronger so it send it back to the nest  
+                    #TODO: Negative value for pheremones 
+            else:
+                if grid.pheremones[self.loc[0], self.loc[1]] < self.sigma_1:
+                    grid.pheremones[self.loc[0], self.loc[1]] += 1.
+ 
+
+    #pos and from the center 
     def pos_callback(self, pose):
         """:type pose: PoseWithCovarianceStamped"""
-        if None in [self.map, self.costmap, self.measurements]:
+        if None in [self.map, self.measurements]:
             return
 
         if self.pos != Pos(pose.pose.pose.position.x, pose.pose.pose.position.y):
@@ -98,9 +188,23 @@ class Ant():
     def calc_dist(self): # Probably to calculate where it is on the grid 
         print(42)
 
+    def stop(self):
+        """Stop the robot."""
+        twist_msg = Twist()
+        self._cmd_pub.publish(twist_msg)
+
 def main():
     """Main function."""
-    print(42)
+    rospy.init_node('Ant')
+       
+    # Sleep for a few seconds to wait for the registration.
+    rospy.sleep(2)
+
+    # Initialization of the class for the simple motion.
+    ant_bot = Ant()
+
+    # If interrupted, send a stop command.
+    rospy.on_shutdown(ant_bot.stop)
 
 
 if __name__ == "__main__":
@@ -109,4 +213,4 @@ if __name__ == "__main__":
     try:
         main()
     except rospy.ROSInterruptException:
-        pass
+        rospy.logerr("ROS node interrupted.")
