@@ -1,20 +1,112 @@
 #!/usr/bin/env python
 #The line above is important so that this file is interpreted with Python when running it.
-
+import numpy as np
+import random
 
 # import of relevant libraries.
 import rospy # module for ROS APIs
+from geometry_msgs.msg import PoseWithCovarianceStamped, Point  # Msg of the position of the robot
+# http://docs.ros.org/en/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
 
+from nav_msgs.msg import OccupancyGrid, GridCells  # Msg of the path
 
 class Ant():
+    def __init__(self, n, m, n_home, m_home, q, sigma_1, signma_2, mu):
+        self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback, queue_size=1)
+        self._pos_sub = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.pos_callback, queue_size=1)
+        self._coverage_pub = rospy.Publisher('/cells', GridCells, queue_size=1)
+
+
+        self.map = None  # type: OccupancyGrid 
+        self.dists = None  # type: List[List[int]]
+        self.pos = None  # type: Pos   # self.loc = (n, m) location in python
+        self.home_pos = None  # type: Pos
+        self.measurements = None  # type: List[List[int]]
+        self.grid = None  # type: GridCells
+        
+        #TODO: reperesenting position in ros_stage
+        self.dir = (1, 0) # Foward to the lef or to the right 
+        
+        self.hasfood = False
+        self.removed = False
+
+
+    def randomize_direction(self):
+        direction = 0 
+        return direction 
     
+    def move(self, grid):
+        print(42)
+
+    def pos_callback(self, pose):
+        """:type pose: PoseWithCovarianceStamped"""
+        if None in [self.map, self.costmap, self.measurements]:
+            return
+
+        if self.pos != Pos(pose.pose.pose.position.x, pose.pose.pose.position.y):
+            print("pose received")
+            self.pos = Pos(pose.pose.pose.position.x, pose.pose.pose.position.y)
+
+            self.map_pos = Pos(int(round((self.pos.x - self.map.info.origin.position.x) / self.map.info.resolution)),
+                               int(round((self.pos.y - self.map.info.origin.position.y) / self.map.info.resolution)))
+
+            m = int(round(MEASUREMENT_RADIUS / self.map.info.resolution))
+            for x, y in itertools.product(xrange(self.map_pos.x - m, self.map_pos.x + m),
+                                          xrange(self.map_pos.y - m, self.map_pos.y + m)):
+                try:
+                    self.measurements[x][y] = 0
+                except IndexError:
+                    pass
+
+            self.calc_grid()
+
+    def map_callback(self, cb_map):
+        """:type cb_map: OccupancyGrid"""
+        print("map received")
+        self.map = cb_map
+        costmap = [list(l) for l in zip(*[self.map.data[y * self.map.info.width:(y + 1) * self.map.info.width]
+                                          for y in xrange(self.map.info.height)])]
+
+        for x in xrange(len(costmap)):  # type: int
+            for y in itertools.chain(xrange(len(costmap[x])), reversed(xrange(len(costmap[x])))):  # type: int
+                try:
+                    for i, j in itertools.product(*[[0, 1, -1]] * 2):
+                        costmap[x + i][y + j] = max(costmap[x + i][y + j], costmap[x][y] - 1)
+                except IndexError:
+                    pass
+        for y in xrange(len(costmap[0])):  # type: int
+            for x in itertools.chain(xrange(len(costmap)), reversed(xrange(len(costmap)))):  # type: int
+                try:
+                    for i, j in itertools.product(*[[0, 1, -1]] * 2):
+                        costmap[x + i][y + j] = max(costmap[x + i][y + j], costmap[x][y] - 1)
+                except IndexError:
+                    pass
+
+        self.costmap = costmap
+        self.measurements = [[-1] * self.map.info.height for _ in xrange(self.map.info.width)]
+        self.calc_grid()
+
+
+    def send(self):
+        if self.grid is not None:
+            print("grid sent, len:", len(self.grid.cells))
+            self.coverage_pub.publish(self.grid)
+
+    def calc_grid(self): # Probably to calculate where it is on the grid 
+        print(42)
+
+    def calc_dist(self): # Probably to calculate where it is on the grid 
+        print(42)
 
 def main():
     """Main function."""
-
-  
+    print(42)
 
 
 if __name__ == "__main__":
     """Run the main function."""
-    main()
+    rospy.init_node('Ant')
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
