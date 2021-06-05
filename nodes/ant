@@ -1,0 +1,209 @@
+#!/usr/bin/env python
+#The line above is important so that this file is interpreted with Python when running it.
+import numpy as np
+import random
+
+# import of relevant libraries.
+import rospy # module for ROS APIs
+from geometry_msgs.msg import PoseWithCovarianceStamped, Point  # Msg of the position of the robot
+
+# http://docs.ros.org/en/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
+from nav_msgs.msg import OccupancyGrid, GridCells, #TODO: Odometry  # Msg of the path
+
+class Ant():
+    def __init__(self, n, m,  q, sigma_1, signma_2, mu):
+        self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback, queue_size=1)
+        self._pos_sub = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.pos_callback, queue_size=1)
+        self._cmd_pub = rospy.Publisher('/cells', GridCells, queue_size=1)
+
+       # self.loc =(n,m) #TODO: Might not need if the nest will return the grid coord 
+
+        # self.map = None  # type: OccupancyGrid 
+        # self.grid = None  # type: List[List[int]] Should just be 2D #TODO: Nest would do this 
+        self.pos = None  # type: Pos   # self.loc = (n, m) location in python
+        # self.nest_pos = None  # type: Pos #TODO: Leave this to the nest 
+
+        self.home = None
+        
+        #TODO: reperesenting position in ros_stage
+        self.flip_dir = False # TODO: WHenever we have food this is true rotate robo 180 # Type BOOlean Foward to the lef or to the right  
+        
+        self.hasfood = False
+        self.removed = False
+
+
+        # self.q =q #TODO: Move to next for evap. 
+        self.pheremones = 1 #TODO: Deposited 
+        self.sigma_1 = sigma_1 
+        self.sigma_2 = signma_2
+        self.mu = mu # Dictates  how much ant favors movement towarsds empty cells 
+
+
+    def randomize_direction(self, grid):
+        #Based on loc ask the nest for pos 
+        #
+        #Curr locatoin ask nest to find pheremone for the three possible choices 
+        #RETURN What dir it heads to 
+
+        p0 = grid.pheremones[self.loc[0], self.loc[1]+1] + grid.pheremones[self.loc[0]+1, self.loc[1]+1] + grid.pheremones[self.loc[0]-1, self.loc[1]+1]
+        p1 = grid.pheremones[self.loc[0]+1, self.loc[1]] + grid.pheremones[self.loc[0]+1, self.loc[1]+1] + grid.pheremones[self.loc[0]+1, self.loc[1]-1]
+        p2 = grid.pheremones[self.loc[0], self.loc[1]-1] + grid.pheremones[self.loc[0]+1, self.loc[1]-1] + grid.pheremones[self.loc[0]-1, self.loc[1]-1]
+        
+        ps = p0 + p1 + p2 
+        if ps != 0:
+            p0 /= ps
+            p1 /= ps
+            p2 /= ps
+            did = np.random.choice([0,1,2], 1, p=[p0,p1,p2])
+
+        else:
+            did = np.random.choice(4, 1)
+        if did == 0: #TODO: Fix into actua values 
+            direction = (0, 1) #forward 
+        elif did == 1:
+            direction = (1, 0)#forward right
+        elif did == 2:
+            direction = (0, -1)# forward left
+
+        return direction
+
+  
+    def move(self, grid): # send to nest get the center coord. do the physical calc for moving the robot there
+       # if you are out of bounds then stop moving
+        # check if it has food or home
+        if not self.removed:
+            left_loc = (self.loc[0]+self.dir[1]+self.dir[0], self.loc[1]-self.dir[0]+self.dir[1])
+            front_loc = (self.loc[0]+self.dir[0], self.loc[1]+self.dir[1])
+            right_loc = (self.loc[0]-self.dir[1]+self.dir[0], self.loc[1]+self.dir[0]+self.dir[1])
+        
+            lp = grid.pheremones[left_loc[0], left_loc[1]]
+            fp = grid.pheremones[front_loc[0], front_loc[1]]
+            rp = grid.pheremones[right_loc[0], right_loc[1]]
+            
+            p_m = 0.5 * (1 + np.tanh((lp + fp + rp)/100 - 1))
+            if np.random.choice(2, 1, p=[1-p_m,p_m]):
+                c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
+                p_left = 1/c * (self.mu + lp)**2
+                p_front = 1/c * (self.mu + fp)**2
+                p_right = 1/c * (self.mu + rp)**2
+                
+                next_loc = np.random.choice(["left_loc","right_loc","front_loc"], 1, p=[p_left,p_right,p_front])
+                if next_loc == "left_loc" and grid.occupancy[left_loc[0], left_loc[1]] < Am:
+                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
+                    self.loc = left_loc
+                    grid.occupancy[self.loc[0], self.loc[1]] += 1
+                elif next_loc == "front_loc" and grid.occupancy[front_loc[0], front_loc[1]] < Am:
+                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
+                    self.loc = front_loc
+                    grid.occupancy[self.loc[0], self.loc[1]] += 1
+                elif next_loc == "right_loc" and grid.occupancy[right_loc[0], right_loc[1]] < Am:
+                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
+                    self.loc = right_loc
+                    grid.occupancy[self.loc[0], self.loc[1]] += 1
+
+                    
+                if grid.food[self.loc[0], self.loc[1]] > 0:
+                    if not self.hasfood:
+                        g.food[self.loc[0], self.loc[1]] -= 1
+                        self.dir = (self.dir[0]*-1, self.dir[1]*-1) # Flips direction
+                        self.hasfood = True
+                        
+                        
+                if (self.home[0]-1 < self.loc[0] < self.home[0]+1) and (self.home[1]-1 < self.loc[1] < self.home[1]+1) and self.hasfood:
+                    self.hasfood = False
+                    grid.occupancy[self.home[0], self.home[1]] -= 1
+                    grid.food_drop -= 1
+                    self.removed = True
+                    print("Brought back food!")
+                    
+                    
+            if self.hasfood:
+                if grid.pheremones[self.loc[0], self.loc[1]] < self.sigma_2:
+                    print(34)
+                    #TODO: Set the threshold for pheremone to be stronger so it send it back to the nest  #TODO: decrease MU
+                    #TODO: pheremones back
+            else:
+                if grid.pheremones[self.loc[0], self.loc[1]] < self.sigma_1:
+                    grid.pheremones[self.loc[0], self.loc[1]] += 1.
+ 
+
+    #pos and from the center 
+    def pos_callback(self, pose):
+        """:type pose: PoseWithCovarianceStamped"""
+        if None in [self.map, self.measurements]:
+            return
+
+        if self.pos != Pos(pose.pose.pose.position.x, pose.pose.pose.position.y):
+            print("pose received")
+            self.pos = Pos(pose.pose.pose.position.x, pose.pose.pose.position.y)
+
+            self.map_pos = Pos(int(round((self.pos.x - self.map.info.origin.position.x) / self.map.info.resolution)),
+                               int(round((self.pos.y - self.map.info.origin.position.y) / self.map.info.resolution)))
+
+            m = int(round(MEASUREMENT_RADIUS / self.map.info.resolution))
+            for x, y in itertools.product(xrange(self.map_pos.x - m, self.map_pos.x + m),
+                                          xrange(self.map_pos.y - m, self.map_pos.y + m)):
+                try:
+                    self.measurements[x][y] = 0
+                except IndexError:
+                    pass
+
+            self.calc_grid()
+
+    def map_callback(self, cb_map):
+        """:type cb_map: OccupancyGrid"""
+        print("map received")
+        self.map = cb_map
+        costmap = [list(l) for l in zip(*[self.map.data[y * self.map.info.width:(y + 1) * self.map.info.width]
+                                          for y in xrange(self.map.info.height)])]
+
+        for x in xrange(len(costmap)):  # type: int
+            for y in itertools.chain(xrange(len(costmap[x])), reversed(xrange(len(costmap[x])))):  # type: int
+                try:
+                    for i, j in itertools.product(*[[0, 1, -1]] * 2):
+                        costmap[x + i][y + j] = max(costmap[x + i][y + j], costmap[x][y] - 1)
+                except IndexError:
+                    pass
+        for y in xrange(len(costmap[0])):  # type: int
+            for x in itertools.chain(xrange(len(costmap)), reversed(xrange(len(costmap)))):  # type: int
+                try:
+                    for i, j in itertools.product(*[[0, 1, -1]] * 2):
+                        costmap[x + i][y + j] = max(costmap[x + i][y + j], costmap[x][y] - 1)
+                except IndexError:
+                    pass
+
+        self.costmap = costmap
+        self.measurements = [[-1] * self.map.info.height for _ in xrange(self.map.info.width)]
+        self.calc_grid()
+
+
+    def send(self):
+        if self.grid is not None:
+            print("grid sent, len:", len(self.grid.cells))
+            self.coverage_pub.publish(self.grid)
+
+    def stop(self):
+        """Stop the robot."""
+        twist_msg = Twist()
+        self._cmd_pub.publish(twist_msg)
+
+def main():
+    """Main function."""
+    rospy.init_node('Ant')
+       
+    # Sleep for a few seconds to wait for the registration.
+    rospy.sleep(2)
+
+    # Initialization of the class for the simple motion.
+    ant_bot = Ant()
+
+    # If interrupted, send a stop command.
+    rospy.on_shutdown(ant_bot.stop)
+
+if __name__ == "__main__":
+    """Run the main function."""
+    rospy.init_node('Ant')
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        rospy.logerr("ROS node interrupted.")
