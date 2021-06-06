@@ -5,57 +5,59 @@ import random
 import math
 # import of relevant libraries.
 import rospy # module for ROS APIs
-from geometry_msgs.msg import PoseWithCovarianceStamped, Twist   # Msg of the position of the robot
-from std_msgs.msg import Float64 
-# http://docs.ros.org/en/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
-from nav_msgs.msg import OccupancyGrid, GridCells, Odometry  # Msg of the path
+from geometry_msgs.msg import Twist, Pose   # Msg of the position of the robot
+from nav_msgs.msg import Odometry  # Msg of the path
 from service_node.srv import*
 
 # Constants.
-FREQUENCY = 10 #Hz.
-# LINEAR_VELOCITY = 0.2 # m/s
+FREQUENCY = 10 #Hz
 ANGULAR_VELOCITY = math.pi/4 # rad/s
 LASER_ANGLE_FRONT = 0 # radians
 MIN_THRESHOLD_DISTANCE = 0.5 # m, threshold distance.
-DEFAULT_CMD_VEL_TOPIC = 'cmd_vel'
-DEFAULT_SCAN_TOPIC = 'scan'
 
+DEFAULT_ODOM_TOPIC = '/odom'
+DEFAULT_SCAN_TOPIC = '/scan'
+DEFAULT_CMD_VEL_TOPIC = 'cmd_vel'
 
 class Ant():
     def __init__(self, sigma_1, signma_2, mu):
-        self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback, queue_size=1)
-        self._pos_sub = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.pos_callback, queue_size=1)
-        self._cmd_pub = rospy.Publisher('/cells', GridCells, queue_size=1)
-        self._odo_sub = rospy.Subscriber('/odom', Odometry, self._pos_callback)
-                # Setting up subscriber.
-        self._laser_sub = rospy.Subscriber('scan', LaserScan, self._laser_callback, queue_size=1)
+        "Constructor."
+        # Setting up subscriber.
+        self._odo_sub = rospy.Subscriber(DEFAULT_ODOM_TOPIC, Odometry, self._pos_callback)
+        self._laser_sub = rospy.Subscriber(DEFAULT_SCAN_TOPIC, LaserScan, self._laser_callback, queue_size=1)
 
-        self.pos = None  # type: Pos  
-        self.ishome = None # type: Pos. The nest Position # TODO: This could just be the they first spawn in instead of hardcoding
-        
-        self.flip_dir = False # type: Boolean. Turns robot 180  
-        
-        self.hasfood = False # type: Boolean. Keeps track of food 
-        self.removed = False # type: Boolean. Keeps track of whether the robot has been stopped or not
-        self.out_of_bounds = False
-        self.direction = 2
+        # Setting up publishers
+        self._cmd_pub = rospy.Publisher(DEFAULT_CMD_VEL_TOPIC, Twist, queue_size=1)
 
-        self.pheremones = None#TODO: Deposited 
+        self.pos = None  # type: Pose  
+        self.ishome = None # Nest positoin type: Pose
+        
+        self.flip_dir = False # Turns robot 180 type: Boolean.   
+        
+        self.hasfood = False # Keeps track of food  type: Boolean. 
+        self.removed = False # Keeps track of robot being stopped type: Boolean
+        self.direction = 2 # Integer rep. of direction type: int 
+
+        self.pheremones = None
         self.sigma_1 = sigma_1 
         self.sigma_2 = signma_2
         self.mu = mu # Dictates how much ant favors movement towarsds empty cells 
         self.potential_coordinates = None
-        self._close_obstacle = False
+        self._close_obstacle = False # TODO: Fix obstacle location
 
-    def randomize_direction(self): #TODO: Fix up service call(client)
-        rospy.wait_for_service('whatever_this_service_is_named') #TODO: Change the name to whatever the service is called
+        self.orientation = 0
+
+    def randomize_direction(self):
+        "Function to randomize direction of the ant"
+        
+        rospy.wait_for_service('get_next_locations') 
 
         try: 
-            nest_update = rospy.ServiceProxy('current_grid_space', CurrentGridSpace)#TODO: Change to actual name
-            resp1 = nest_update(self.pos, self.direction) 
+            nest_update = rospy.ServiceProxy('get_next_locations', GetNextLocations)
+            resp1 = nest_update(self.pos.x, self.pos.y, self.orientation) 
             self.removed = resp1.removed
-            self.pheremones = resp1.pheremones
-            self.potential_coordinates = resp1.coord 
+            self.pheremones = [resp1.p1, resp1.p2, resp1.p3]
+            self.potential_coordinates = [(resp1.x1, resp1.y1),(resp1.x2, resp1.y2),(resp1.x3, resp1.y3)]
 
         except rospy.ServiceException as e:
             print("Service call failed in the randomize direction function: %s"%e)
@@ -78,67 +80,83 @@ class Ant():
             p_right = 1/c * (self.mu + rp)**2
             
         next_loc = np.random.choice([1 ,2,3], 1, p=[p_left,p_right,p_front])
+        self.direction = next_loc #Updates direction for server 
+
         if next_loc == 1:
-            direction = left_loc
+            dir = left_loc
         elif next_loc == 2:
-            direction = front_loc
+            dir = front_loc
         elif next_loc == 3:
-            direction = right_loc
+            dir = right_loc
 
-        return direction
+        dir_x, dir_y = dir
+        goal = Pose()
+        goal.position.x = dir_x
+        goal.position.y = dir_y
 
-    def move(self): # send to nest get the center coord. do the physical calc for moving the robot there
-        # if you are out of bounds then stop moving
-        # check if it has food or home
-        dir = self.randomize_direction()
-        self.move_helper(dir)
+        return goal
+
+    def move(self): 
+        "Function to move the robot in the desired direction and check if it has food, removed, or is home"
+        goal = self.randomize_direction()
+        if not self.removed:  #if the ant is not dead
+            self.move_helper(goal)
   
-        rospy.wait_for_service('nest_update') #TODO: Change the name to whatever the service is called
+        rospy.wait_for_service('nest_update') 
         try: 
-            nest_update = rospy.ServiceProxy('nest_update', NestUpdate)#TODO: Change to actual name
-            resp2 = nest_update(self.pos, self.hasfood) 
-            self.removed = resp2.removed
-            self.hasfood = resp2.hasfood
-            self.ishome = resp2.nest
+            update_nest = rospy.ServiceProxy('update_nest', UpdateNest)
+            resp2 = update_nest(self.pos.x, self.pos.y, self.hasfood) 
+            self.removed = resp2.outOfBounds
+            self.hasfood = resp2.isNest
+            self.ishome = resp2.isFood
 
         except rospy.ServiceException as e:
-            print("Service call failed in the randomize direction function: %s"%e)
+            print("Service call failed in the move function in ant: %s"%e)
 
         if self.removed: 
+            self.pos.x = 0
+            self.pos.z = 0
             self.stop()
 
         else:
             if self.hasfood:
                 self.flip_dir = True 
                 self.mu -= 0.3 # threshold for pheremones is stronger 
-                #TODO: Figure out how to make them come back
-                        
+
+                vel_msg = Twist()
+                vel_msg = (180*math.pi)/180 #Rotates 180 to return home
+                # Publishing our vel_msg
+                self._cmd_pub.publish(vel_msg)
+                self.flip_dir = False
 
             if self.ishome:
                 self.hasfood = False
                 self.removed = True
+                self.stop()
                 rospy.loginfo("Hi, made it back!")
 
 
-    def move_helper(self, goal): #TODO: Finish this function and change to actual pos values
-        """Moves the turtle to the goal."""
-
+    def move_helper(self, goal): 
+        """Moves the robot to the goal."""
         vel_msg = Twist()
 
         while self.euclidean_distance(goal) >= MIN_THRESHOLD_DISTANCE:
 
             # Linear velocity in the x-axis.
-            vel_msg.linear.x = self.linear_vel(goal.pose.pose.position.x)
+            vel_msg.linear.x = self.linear_vel(goal.position.x)
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
 
             # Angular velocity in the z-axis.
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
-            vel_msg.angular.z = self.angular_vel(goal.pose.pose.position.z)
+            if self._close_obstacle or self.flip_dir:
+                vel_msg.angular.z = (180*math.pi)/180 #Rotates 180 to avoid obstacles or return home
+            else: 
+                vel_msg.angular.z = self.angular_vel(goal)
 
             # Publishing our vel_msg
-            self.velocity_publisher.publish(vel_msg)
+            self._cmd_pub.publish(vel_msg)
 
             # Publish at the desired rate.
             self.rate.sleep()
@@ -146,36 +164,36 @@ class Ant():
         # Stopping our robot after the movement is over.
         vel_msg.linear.x = 0
         vel_msg.angular.z = 0
-        self.velocity_publisher.publish(vel_msg)
-        #TODO: Check for obstacles
+        self._cmd_pub.publish(vel_msg)
 
     def euclidean_distance(self, goal):
-    #Euclidean distance between current pose and the goal. 
-        return math.sqrt(math.pow((goal.pose.pose.position.x - self.pos.pose.pose.position.x), 2) + math.pow((goal.pose.pose.position.y - self.pos.pose.pose.position.y), 2))
+        """Euclidean distance between current pose and the goal."""
+        return math.sqrt(math.pow((goal.position.x - self.pos.x), 2) + math.pow((goal.position.y - self.pos.y), 2))
 
     def linear_vel(self, goal, constant=1.5):
+        """helper function to euclidean distance."""
         return constant * self.euclidean_distance(goal)
 
     def steering_angle(self, goal):
-        return math.atan2(goal.pose.pose.position.y - self.pos.pose.pose.position.y, goal.pose.pose.position.x - self.pos.pose.pose.position.x)
+        """helper function to angular velocity to help steer"""
+        orientation = math.atan2(goal.position.y - self.pos.y, goal.position.x - self.pos.x)
+        self.orientation += orientation
+        return orientation
 
     def angular_vel(self, goal, constant=6):
-        return constant * (self.steering_angle(goal) - self.pos.pose.pose.position.z)
+        """Process angular velocity."""
+        return constant * (self.steering_angle(goal) - self.pos.z)
 
     #pos and from the center 
     def _pos_callback(self, pose):
         """Processing of odom position message."""
-        self.pos = data
+        self.pos = pose
         self.pos.x = round(self.pos.pose.pose.position.x, 2)
         self.pos.y = round(self.pos.pose.pose.position.y, 2)
-
-    def _callback(self, msg):
-        self.msg_from_nest = msg.data
-        rospy.loginfo("Hi, this is from an ant: {}".format(self.msg_to_nest))
-        self._chat_pub.publish(self.msg_to_nest)
+        self.pos.z = self.pos.pose.pose.position.z
 
     def stop(self):
-        """Stop the robot."""
+        """Stop the robot. Borrowed from Simple Motion"""
         twist_msg = Twist()
         self.removed = True
         self._cmd_pub.publish(twist_msg)
@@ -193,7 +211,7 @@ class Ant():
 
 def main():
     """Main function."""
-    rospy.init_node('Ant')
+
        
     # Sleep for a few seconds to wait for the registration.
     rospy.sleep(2)
