@@ -5,7 +5,7 @@ import random
 import math
 # import of relevant libraries.
 import rospy # module for ROS APIs
-from geometry_msgs.msg import PoseWithCovarianceStamped, Point  # Msg of the position of the robot
+from geometry_msgs.msg import PoseWithCovarianceStamped, Twist   # Msg of the position of the robot
 from std_msgs.msg import Float64 
 # http://docs.ros.org/en/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
 from nav_msgs.msg import OccupancyGrid, GridCells, Odometry  # Msg of the path
@@ -128,14 +128,14 @@ class Ant():
         while self.euclidean_distance(goal) >= MIN_THRESHOLD_DISTANCE:
 
             # Linear velocity in the x-axis.
-            vel_msg.linear.x = self.linear_vel(goal.x)
+            vel_msg.linear.x = self.linear_vel(goal.pose.pose.position.x)
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
 
             # Angular velocity in the z-axis.
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
-            vel_msg.angular.z = self.angular_vel(goal.z)
+            vel_msg.angular.z = self.angular_vel(goal.pose.pose.position.z)
 
             # Publishing our vel_msg
             self.velocity_publisher.publish(vel_msg)
@@ -151,23 +151,23 @@ class Ant():
 
     def euclidean_distance(self, goal):
     #Euclidean distance between current pose and the goal. 
-        return math.sqrt(math.pow((goal.x - self.pos.x), 2) + math.pow((goal.y - self.pos.y), 2))
+        return math.sqrt(math.pow((goal.pose.pose.position.x - self.pos.pose.pose.position.x), 2) + math.pow((goal.pose.pose.position.y - self.pos.pose.pose.position.y), 2))
 
     def linear_vel(self, goal, constant=1.5):
         return constant * self.euclidean_distance(goal)
 
     def steering_angle(self, goal):
-        return math.atan2(goal.y - self.pos.y, goal.x - self.pos.x)
+        return math.atan2(goal.pose.pose.position.y - self.pos.pose.pose.position.y, goal.pose.pose.position.x - self.pos.pose.pose.position.x)
 
     def angular_vel(self, goal, constant=6):
-        return constant * (self.steering_angle(goal) - self.pos.theta)
+        return constant * (self.steering_angle(goal) - self.pos.pose.pose.position.z)
 
     #pos and from the center 
     def _pos_callback(self, pose):
         """Processing of odom position message."""
         self.pos = data
-        self.pos.x = round(self.pose.x, 2)
-        self.pos.y = round(self.pose.y, 2)
+        self.pos.x = round(self.pos.pose.pose.position.x, 2)
+        self.pos.y = round(self.pos.pose.pose.position.y, 2)
 
     def _callback(self, msg):
         self.msg_from_nest = msg.data
