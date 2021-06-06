@@ -26,7 +26,7 @@ catkin_python_setup()
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
-add_service_files(DIRECTORY srv FILES GetNextLocations.srv InitNest.srv UpdateNest.srv AntStart.srv)
+add_service_files(DIRECTORY srv FILES GetNextLocations.srv InitNest.srv UpdateNest.srv AntStart.srv EndRound.srv)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##

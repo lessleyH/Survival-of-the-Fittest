@@ -8,8 +8,15 @@
        See http://wiki.ros.org/Clock
        Note: set to false for deploying to a real robot.
   -->
+  <master auto="start"/>
   <arg name="use_sim_time" default="true"/>
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
-  <node pkg="ant_foraging" type="ant_foraging" name="ant_foraging" output="screen"/>
+
+  <!-- start world -->
+  <node name="stageros" pkg="stage_ros" type="gazebo" 
+   args="$(rospack find ant_foraging)/world/ant_world.world" respawn="false" output="screen" />
+
+   
+
 </launch>
