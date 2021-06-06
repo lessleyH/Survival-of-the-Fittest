@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+#The line above is important so that this file is interpreted with Python when running it.
+
+import random
+import rospy
+from ant_foraging.srv import InitNest, InitNestResponse
+
+'''
+Initializations	
+Keeps time/round/loops through things
+Sends message to nest that round has ended
+Send food locations to nest
+'''
+
+
+class Controller():
+    def __init__():
+
+
+def main():
+    """Main function."""
+
+
+if __name__ == "__main__":
+    """Run the main function."""
+    rospy.init_node('Controller')  
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
+
