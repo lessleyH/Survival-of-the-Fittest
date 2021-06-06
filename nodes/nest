@@ -47,7 +47,39 @@ class Nest():
     
     #return the next possible coordinates from a given location
     def get_choices(self, i, j, direction):
+        #1= left
+        #2 = forward
+        #3 = right
+
+        isNeg = False
+        dir = direction
+
+        if dir < 0:
+            isNeg = True
+            dir = -1 * dir
+
+        degree = dir % 360
+
+        if isNeg:
+            degree = 360 - degree
+
         choices = []
+        if degree > 135 or degree <= 225:
+            choices.append([i-1, j-1])
+            choices.append([i-1, j,])
+            choices.append([i-1, j+1,])
+        if degree > 225 or degree <= 315:
+            choices.append([i-1, j+1])
+            choices.append([i, j + 1,])
+            choices.append([i+1, j+1,])
+        if degree > 315 or degree <= 45:
+            choices.append([i+1, j+1])
+            choices.append([i+1, j,])
+            choices.append([i+1, j-1,])
+        if degree > 45 or degree <= 135:
+            choices.append([i+1, j-1])
+            choices.append([i, j-1,])
+            choices.append([i-1, j-1,])
 
         #return the choices with phermones
         for choice in choices:
