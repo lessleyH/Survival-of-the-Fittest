@@ -2,7 +2,7 @@
 #The line above is important so that this file is interpreted with Python when running it.
 import numpy as np
 import random
-
+import math
 # import of relevant libraries.
 import rospy # module for ROS APIs
 from geometry_msgs.msg import PoseWithCovarianceStamped, Point  # Msg of the position of the robot
@@ -11,12 +11,24 @@ from std_msgs.msg import Float64
 from nav_msgs.msg import OccupancyGrid, GridCells, Odometry  # Msg of the path
 from service_node.srv import*
 
+# Constants.
+FREQUENCY = 10 #Hz.
+# LINEAR_VELOCITY = 0.2 # m/s
+ANGULAR_VELOCITY = math.pi/4 # rad/s
+LASER_ANGLE_FRONT = 0 # radians
+MIN_THRESHOLD_DISTANCE = 0.5 # m, threshold distance.
+DEFAULT_CMD_VEL_TOPIC = 'cmd_vel'
+DEFAULT_SCAN_TOPIC = 'scan'
+
+
 class Ant():
     def __init__(self, sigma_1, signma_2, mu):
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback, queue_size=1)
         self._pos_sub = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.pos_callback, queue_size=1)
         self._cmd_pub = rospy.Publisher('/cells', GridCells, queue_size=1)
-        self._odo_pub = rospy.Publisher('/odom', Odometry)
+        self._odo_sub = rospy.Subscriber('/odom', Odometry, self._pos_callback)
+                # Setting up subscriber.
+        self._laser_sub = rospy.Subscriber('scan', LaserScan, self._laser_callback, queue_size=1)
 
         self.pos = None  # type: Pos  
         self.ishome = None # type: Pos. The nest Position # TODO: This could just be the they first spawn in instead of hardcoding
@@ -26,20 +38,21 @@ class Ant():
         self.hasfood = False # type: Boolean. Keeps track of food 
         self.removed = False # type: Boolean. Keeps track of whether the robot has been stopped or not
         self.out_of_bounds = False
+        self.direction = 2
 
         self.pheremones = None#TODO: Deposited 
         self.sigma_1 = sigma_1 
         self.sigma_2 = signma_2
         self.mu = mu # Dictates how much ant favors movement towarsds empty cells 
         self.potential_coordinates = None
+        self._close_obstacle = False
 
     def randomize_direction(self): #TODO: Fix up service call(client)
-        direction = self.pos
         rospy.wait_for_service('whatever_this_service_is_named') #TODO: Change the name to whatever the service is called
 
         try: 
             nest_update = rospy.ServiceProxy('current_grid_space', CurrentGridSpace)#TODO: Change to actual name
-            resp1 = nest_update(self.pos) 
+            resp1 = nest_update(self.pos, self.direction) 
             self.removed = resp1.removed
             self.pheremones = resp1.pheremones
             self.potential_coordinates = resp1.coord 
@@ -64,12 +77,12 @@ class Ant():
             p_front = 1/c * (self.mu + fp)**2
             p_right = 1/c * (self.mu + rp)**2
             
-        next_loc = np.random.choice(["left_loc","right_loc","front_loc"], 1, p=[p_left,p_right,p_front])
-        if next_loc == "left_loc":
+        next_loc = np.random.choice([1 ,2,3], 1, p=[p_left,p_right,p_front])
+        if next_loc == 1:
             direction = left_loc
-        elif next_loc == "front_loc":
+        elif next_loc == 2:
             direction = front_loc
-        elif next_loc == "right_loc":
+        elif next_loc == 3:
             direction = right_loc
 
         return direction
@@ -83,9 +96,9 @@ class Ant():
         rospy.wait_for_service('nest_update') #TODO: Change the name to whatever the service is called
         try: 
             nest_update = rospy.ServiceProxy('nest_update', NestUpdate)#TODO: Change to actual name
-            resp2 = nest_update(self.pos) 
+            resp2 = nest_update(self.pos, self.hasfood) 
             self.removed = resp2.removed
-            self.hasfood = resp2.pheremones
+            self.hasfood = resp2.hasfood
             self.ishome = resp2.nest
 
         except rospy.ServiceException as e:
@@ -107,76 +120,76 @@ class Ant():
                 rospy.loginfo("Hi, made it back!")
 
 
-    def move_helper(self, direction):
-        "This is where I will actually move the robot. Should update self.pos before sending it to the server"
-        print(42)
+    def move_helper(self, goal): #TODO: Finish this function and change to actual pos values
+        """Moves the turtle to the goal."""
+
+        vel_msg = Twist()
+
+        while self.euclidean_distance(goal) >= MIN_THRESHOLD_DISTANCE:
+
+            # Linear velocity in the x-axis.
+            vel_msg.linear.x = self.linear_vel(goal.x)
+            vel_msg.linear.y = 0
+            vel_msg.linear.z = 0
+
+            # Angular velocity in the z-axis.
+            vel_msg.angular.x = 0
+            vel_msg.angular.y = 0
+            vel_msg.angular.z = self.angular_vel(goal.z)
+
+            # Publishing our vel_msg
+            self.velocity_publisher.publish(vel_msg)
+
+            # Publish at the desired rate.
+            self.rate.sleep()
+     
+        # Stopping our robot after the movement is over.
+        vel_msg.linear.x = 0
+        vel_msg.angular.z = 0
+        self.velocity_publisher.publish(vel_msg)
+        #TODO: Check for obstacles
+
+    def euclidean_distance(self, goal):
+    #Euclidean distance between current pose and the goal. 
+        return math.sqrt(math.pow((goal.x - self.pos.x), 2) + math.pow((goal.y - self.pos.y), 2))
+
+    def linear_vel(self, goal, constant=1.5):
+        return constant * self.euclidean_distance(goal)
+
+    def steering_angle(self, goal):
+        return math.atan2(goal.y - self.pos.y, goal.x - self.pos.x)
+
+    def angular_vel(self, goal, constant=6):
+        return constant * (self.steering_angle(goal) - self.pos.theta)
 
     #pos and from the center 
-    def pos_callback(self, pose):
-        """:type pose: PoseWithCovarianceStamped"""
-        if None in [self.map, self.measurements]:
-            return
-
-        if self.pos != Pos(pose.pose.pose.position.x, pose.pose.pose.position.y):
-            print("pose received")
-            self.pos = Pos(pose.pose.pose.position.x, pose.pose.pose.position.y)
-
-            self.map_pos = Pos(int(round((self.pos.x - self.map.info.origin.position.x) / self.map.info.resolution)),
-                               int(round((self.pos.y - self.map.info.origin.position.y) / self.map.info.resolution)))
-
-            m = int(round(MEASUREMENT_RADIUS / self.map.info.resolution))
-            for x, y in itertools.product(xrange(self.map_pos.x - m, self.map_pos.x + m),
-                                          xrange(self.map_pos.y - m, self.map_pos.y + m)):
-                try:
-                    self.measurements[x][y] = 0
-                except IndexError:
-                    pass
-
-            self.calc_grid()
+    def _pos_callback(self, pose):
+        """Processing of odom position message."""
+        self.pos = data
+        self.pos.x = round(self.pose.x, 2)
+        self.pos.y = round(self.pose.y, 2)
 
     def _callback(self, msg):
         self.msg_from_nest = msg.data
         rospy.loginfo("Hi, this is from an ant: {}".format(self.msg_to_nest))
         self._chat_pub.publish(self.msg_to_nest)
 
-
-    def map_callback(self, cb_map):
-        """:type cb_map: OccupancyGrid"""
-        print("map received")
-        self.map = cb_map
-        costmap = [list(l) for l in zip(*[self.map.data[y * self.map.info.width:(y + 1) * self.map.info.width]
-                                          for y in xrange(self.map.info.height)])]
-
-        for x in xrange(len(costmap)):  # type: int
-            for y in itertools.chain(xrange(len(costmap[x])), reversed(xrange(len(costmap[x])))):  # type: int
-                try:
-                    for i, j in itertools.product(*[[0, 1, -1]] * 2):
-                        costmap[x + i][y + j] = max(costmap[x + i][y + j], costmap[x][y] - 1)
-                except IndexError:
-                    pass
-        for y in xrange(len(costmap[0])):  # type: int
-            for x in itertools.chain(xrange(len(costmap)), reversed(xrange(len(costmap)))):  # type: int
-                try:
-                    for i, j in itertools.product(*[[0, 1, -1]] * 2):
-                        costmap[x + i][y + j] = max(costmap[x + i][y + j], costmap[x][y] - 1)
-                except IndexError:
-                    pass
-
-        self.costmap = costmap
-        self.measurements = [[-1] * self.map.info.height for _ in xrange(self.map.info.width)]
-        self.calc_grid()
-
-
-    def send(self):
-        if self.grid is not None:
-            print("grid sent, len:", len(self.grid.cells))
-            self.coverage_pub.publish(self.grid)
-
     def stop(self):
         """Stop the robot."""
         twist_msg = Twist()
         self.removed = True
         self._cmd_pub.publish(twist_msg)
+
+    def _laser_callback(self, msg):
+        """Processing of laser message. Borrowed from Simple Motion"""
+        # Access to the index of the measurement in front of the robot.
+        # NOTE: assumption: the one at angle 0 corresponds to the front.
+        i = int((LASER_ANGLE_FRONT - msg.angle_min) / msg.angle_increment)
+        if msg.ranges[i] <= MIN_THRESHOLD_DISTANCE:
+            self._close_obstacle = True
+        else:
+            self._close_obstacle = False
+        
 
 def main():
     """Main function."""
