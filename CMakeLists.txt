@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   sensor_msgs
+  std_msgs
+  message_generation
 )
 
 ##########################################
@@ -24,12 +26,16 @@ catkin_python_setup()
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
-# No new message declared.
+add_service_files(DIRECTORY srv FILES GetNextLocations.srv InitNest.srv UpdateNest.srv)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
 # No new parameters declared.
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -40,7 +46,9 @@ catkin_package(
     geometry_msgs
     nav_msgs
     sensor_msgs
+    message_runtime
 )
+
 
 ###########
 ## Build ##

@@ -4,7 +4,7 @@
 import numpy as np
 import random
 import rospy
-from Survival-of-the-Fittest.srv import GetNextLocations, UpdateNest, InitNest
+from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLocationsResponse, UpdateNestResponse, InitNestResponse
 
 # ask for what current grid space is in (need coordinates and direction!)
     # answer three choices center coordinates of the 3 choices to move to and phermones
@@ -86,16 +86,33 @@ class Nest():
         if sum(result) == 0:
             self.grid[i][j] += DEPOSIT_RATE
 
+        return result
+
     def handle_get_next_locations(self, req):
         newPos = self.pose_to_grid(req.x, req.y)
         choices = self.get_choices(newPos[0], newPos[1], req.dir) #returns list of lists of choices with [x, y, phermones]
         #TODO: set each choice to a srv return variable
-        return GetNextLocationsResponse(req.a + req.b)
+        response = GetNextLocationsResponse()
+        response.x1 = choices[0][0]
+        response.y1 = choices[0][1]
+        response.p1 = choices[0][2]
+        response.x2 = choices[1][0]
+        response.y2 = choices[1][1]
+        response.p2 = choices[1][2]
+        response.x3 = choices[2][0]
+        response.y3 = choices[2][1]
+        response.p3 = choices[2][2]
+        return response
+
 
     def handle_nest_update(self, req):
-        checks = self.update_nest(req.a, req.b, req.c)
+        checks = self.update_nest(req.x, req.y, req.hasFood)
         #TODO: return the boolean values of bounds, nest, food nicely
-        return NestUpdateResponse(req.a + req.b)
+        response = UpdateNestResponse()
+        response.outOfBounds = checks[0]
+        response.isNest = checks[1]
+        response.isFood = checks[2]
+        return response
 
 
     # after each round, evaporate
@@ -112,7 +129,11 @@ def main():
         response = init_nest()
         i = response.i
         j = response.j
-        foodList = response.foods
+        foods = response.foods
+
+        foodSplit = foods.split('')
+        foodList = [food.split(',') for food in foodSplit]
+
         nest = Nest(40, i, j, foodList)
     except rospy.ServiceException as e:
         print("Service call failed: %s"%e)

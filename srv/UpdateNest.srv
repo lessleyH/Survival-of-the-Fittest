@@ -1,0 +1,7 @@
+int64 x
+int64 y
+int64 hasFood
+---
+int64 outOfBounds
+int64 isNest
+int64 isFood
