@@ -4,7 +4,7 @@
 import random
 import rospy
 import random
-from ant_foraging.srv import InitNest, InitNestResponse #, AntStart, AntStartResponse
+from ant_foraging.srv import InitNest, InitNestResponse, AntStart, AntStartResponse
 
 '''
 Initializations	
@@ -15,26 +15,32 @@ Send food locations to nest
 
 class Controller():
     def __init__(self, rounds):
-
+        rospy.loginfo("In init of controller") 
         self.rounds = rounds
         self.init_nest = rospy.Service('init_nest', InitNest, self.handle_init_nest)
         self.start_simulation()
+        rospy.loginfo("end of init in Controller node") 
 
     def start_simulation(self):
+        rospy.loginfo("Controller: Starting Simulation") 
         for i in range(self.rounds):
+            rospy.loginfo("Controller: Round num:") 
+            rospy.loginfo(i) 
             self.ant_start_client(1)
         # end_round_client()
 
     def ant_start_client(self, num):
+        rospy.loginfo("Controller: Ant-start Client") 
         rospy.wait_for_service('ant_start')
         try:
             ant_start = rospy.ServiceProxy('ant_start', AntStart)
-            resp = ant_start.b
-            return resp
+            resp = ant_start(1)
+            return resp.b
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
     def end_round_client(self):
+        rospy.loginfo("Controller: End Round client") 
         rospy.wait_for_service('end_round')
         try:
             end_round = rospy.ServiceProxy('end_round', EndRound)
@@ -47,6 +53,7 @@ class Controller():
     # foodType 0 = large and rare
     # foodType 1 = smal and common
     def init_nest_variables(self, foodType):
+        rospy.loginfo("Controller: init nest variables") 
         i = random.randint(0,40)
         j = random.randint(0,40)
 
@@ -55,7 +62,7 @@ class Controller():
         amt = 0
 
         if foodType == 0:
-            num = 4
+            num = 5
             amt = 20
         else:
             num = 20
@@ -63,8 +70,8 @@ class Controller():
         
 
         for i in range(num):
-            rand_x = str(random.randint(0,40))
-            rand_y = str(random.randint(0,40))
+            rand_x = str(random.randint(0,39))
+            rand_y = str(random.randint(0,39))
             if (rand_x, rand_y) not in points and not (rand_x == i and rand_y == j):
                 points.append((rand_x, rand_y))
 
@@ -73,10 +80,13 @@ class Controller():
         for point in points:
             foods += str(point[0]) + "," + str(point[0]) + "," + str(amt) + " "
 
+        foods = foods[:-1]
+
         return (i,j,foods)
 
 
     def handle_init_nest(self, req):
+        rospy.loginfo("Controller: Handling init nests") 
         checks = self.init_nest_variables(0)
         response = InitNestResponse()
         response.i = checks[0]
@@ -99,7 +109,8 @@ def main():
 
 if __name__ == "__main__":
     """Run the main function."""
-    rospy.init_node('Controller')  
+    rospy.init_node('Controller') 
+    rospy.loginfo("Controller node init") 
     try:
         main()
     except rospy.ROSInterruptException:
