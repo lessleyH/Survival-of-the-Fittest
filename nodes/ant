@@ -12,10 +12,11 @@ from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLoca
 
 # Constants.
 FREQUENCY = 10 #Hz
+LINEAR_VELOCITY = 0.5 # m/s
 ANGULAR_VELOCITY = math.pi/4 # rad/s
 LASER_ANGLE_FRONT = 0 # radians
 MIN_THRESHOLD_DISTANCE = 1.5 # m, threshold distance.
-LINEAR_VELOCITY_CONSTANT =1.5
+LINEAR_VELOCITY_CONSTANT = 1.5
 
 DEFAULT_ODOM_TOPIC = '/odom'
 DEFAULT_SCAN_TOPIC = '/scan'
@@ -169,42 +170,64 @@ class Ant():
 
         return goal
 
-    def rotate
+    def move_forward(self, distance):
+        """Function to move_forward for a given distance."""
+        # Rate at which to operate the while loop.
+        rate = rospy.Rate(FREQUENCY)
+
+        # Setting velocities. 
+        twist_msg = Twist()
+        twist_msg.linear.x = self.linear_velocity
+        start_time = rospy.get_rostime()
+        duration = rospy.Duration(distance/twist_msg.linear.x)
+
+        # Loop.
+        while not rospy.is_shutdown():
+            # Check if traveled of given distance based on time.
+            if rospy.get_rostime() - start_time >= duration:
+                break
+
+            # Publish message.
+            self._cmd_pub.publish(twist_msg)
+
+            # Sleep to keep the set publishing frequency.
+            rate.sleep()
+
+        # Traveled the required distance, stop.
+        self.stop()
+        
+    def rotate_in_place(self, rotation_angle):
+        """
+        Rotate in place the robot of rotation_angle (rad) based on fixed velocity.
+        Assumption: Counterclockwise rotation.
+        """
+        twist_msg = Twist()
+        twist_msg.angular.z = self.angular_velocity
+        
+        duration = rotation_angle / twist_msg.angular.z
+        start_time = rospy.get_rostime()
+        rate = rospy.Rate(FREQUENCY)
+        while not rospy.is_shutdown():
+            # Check if done
+            if rospy.get_rostime() - start_time >= rospy.Duration(duration):
+                break
+                
+            # Publish message.
+            self._cmd_pub.publish(twist_msg)
+            
+            # Sleep to keep the set frequency.
+            rate.sleep()
+
+        # Rotated the required angle, stop.
+        self.stop()
 
     def move_helper(self, goal): 
         """Moves the robot to the goal."""
-        vel_msg = Twist()
-        rate = rospy.Rate(FREQUENCY)
 
-        while self.euclidean_distance(goal) >= MIN_THRESHOLD_DISTANCE: #TODO: fix
+        self.rotate_in_place(self.steering_angle(goal))
+        self.move_forward(self.euclidean_distance(goal))
 
-
-            # Linear velocity in the x-axis.
-            vel_msg.linear.x = LINEAR_VELOCITY_CONSTANT*self.euclidean_distance(goal)
-            rospy.loginfo(vel_msg.linear.x)
-            vel_msg.linear.y = 0
-            vel_msg.linear.z = 0
-
-            # Angular velocity in the z-axis.
-            vel_msg.angular.x = 0
-            vel_msg.angular.y = 0
-            if self._close_obstacle or self.flip_dir:
-                vel_msg.angular.z = (180*math.pi)/180 #Rotates 180 to avoid obstacles or return home
-            else: 
-                vel_msg.angular.z = self.angular_vel(goal)
-
-            # Publishing our vel_msg
-            self._cmd_pub.publish(vel_msg)
-
-            # Publish at the desired rate.
-            rate.sleep()
-
-        self.stop()
-        # Stopping our robot after the movement is over.
-        vel_msg.linear.x = 0
-        vel_msg.angular.z = 0
-        self._cmd_pub.publish(vel_msg)
-
+  
     def euclidean_distance(self, goal):
         """Euclidean distance between current pose and the goal."""
         rospy.loginfo("goal position")
