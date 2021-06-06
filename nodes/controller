@@ -27,7 +27,7 @@ class Controller():
             rospy.loginfo("Controller: Round num:") 
             rospy.loginfo(i) 
             self.ant_start_client(1)
-        # end_round_client()
+            end_round_client()
 
     def ant_start_client(self, num):
         rospy.loginfo("Controller: Ant-start Client") 
@@ -44,7 +44,7 @@ class Controller():
         rospy.wait_for_service('end_round')
         try:
             end_round = rospy.ServiceProxy('end_round', EndRound)
-            resp = end_round
+            resp = end_round(1)
             return resp
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)

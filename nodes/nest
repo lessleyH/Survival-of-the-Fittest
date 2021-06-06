@@ -4,12 +4,7 @@
 import numpy as np
 import random
 import rospy
-from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLocationsResponse, UpdateNestResponse, InitNestResponse
-
-# ask for what current grid space is in (need coordinates and direction!)
-    # answer three choices center coordinates of the 3 choices to move to and phermones
-# need to check for out of bounds / then nest / then food (Booleans) (also send if holding food)
-    # automatically update phermone count
+from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLocationsResponse, UpdateNestResponse, EndRound, EndRoundResponse
 
 DEPOSIT_RATE = 1
 EVAPORATION_RATE = 1 #evaporation rate
@@ -26,6 +21,7 @@ class Nest():
         self.populate_food(foods)
         self.get_next_locations = rospy.Service('get_next_locations', GetNextLocations, self.handle_get_next_locations)
         self.update_nest = rospy.Service('update_nest', UpdateNest, self.handle_nest_update)
+        self.end_round = rospy.Service('end_round', EndRound, self.handle_end_round)
         rospy.loginfo("NEST: Done init node")
 
     def populate_food(self, food_list):
@@ -162,13 +158,18 @@ class Nest():
         response.isFood = checks[2]
         return response
 
+    def handle_end_round(self, req):
+        rospy.loginfo("NEST: end_round_update")
+        self.evaporate()
+        return EndRoundResponse(1)
+
 
     # after each round, evaporate
     def evaporate(self):
         rospy.loginfo("NEST: evaporates")
         for i in range(len(self.grid)):
             for j in range(len(self.grid[0])):
-                self.grid[i][j] -= 1
+                self.grid[i][j] -= EVAPORATION_RATE
         
 def main():
     """Main function."""
