@@ -7,8 +7,9 @@ import math
 import rospy # module for ROS APIs
 from geometry_msgs.msg import Twist, Pose   # Msg of the position of the robot
 from nav_msgs.msg import Odometry  # Msg of the path
-from service_node.srv import*
-from ant_foraging.srv import  AntStart, AntStartResponse
+from sensor_msgs.msg import LaserScan # message type for scan
+#from ant_foraging.srv import AntStart, AntStartResponse
+from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLocationsResponse, UpdateNestResponse
 
 # Constants.
 FREQUENCY = 10 #Hz
@@ -24,7 +25,7 @@ class Ant():
     def __init__(self, sigma_1, signma_2, mu):
         "Constructor."
 
-        self.ant_start = rospy.Service('ant_start', AntStart, self._ant_start_callback)
+        #self.ant_start = rospy.Service('ant_start', AntStart, self._ant_start_callback)
 
 
         # Setting up subscriber.
@@ -189,12 +190,12 @@ class Ant():
         return constant * (self.steering_angle(goal) - self.pos.z)
 
     #pos and from the center 
-    def _pos_callback(self, pose):
+    def _pos_callback(self, data):
         """Processing of odom position message."""
-        self.pos = pose
-        self.pos.x = round(self.pos.pose.pose.position.x, 2)
-        self.pos.y = round(self.pos.pose.pose.position.y, 2)
-        self.pos.z = self.pos.pose.pose.position.z
+        self.pos = data
+        self.pos.x = round(data.pose.pose.position.x, 2)
+        self.pos.y = round(data.pose.pose.position.y, 2)
+        self.pos.z = data.pose.pose.position.z
 
     def stop(self):
         """Stop the robot. Borrowed from Simple Motion"""
@@ -227,6 +228,8 @@ def main():
 
     # Initialization of the class for the simple motion.
     ant_bot = Ant(sigma_1=sigma1, signma_2=sigma2, mu=mu)
+
+    ant_bot.move()
 
     # If interrupted, send a stop command.
     rospy.on_shutdown(ant_bot.stop)

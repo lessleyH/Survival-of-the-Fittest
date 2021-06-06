@@ -22,10 +22,10 @@ class Controller():
 
     def start_simulation(self):
         for i in range(self.rounds):
-            ant_start_client(1)
+            self.ant_start_client(1)
         # end_round_client()
 
-    def ant_start_client(self):
+    def ant_start_client(self, num):
         rospy.wait_for_service('ant_start')
         try:
             ant_start = rospy.ServiceProxy('ant_start', AntStart)
