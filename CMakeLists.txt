@@ -67,6 +67,8 @@ include_directories(
 
 catkin_install_python(PROGRAMS 
   nodes/ant
+  nodes/controller
+  nodes/nest
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
