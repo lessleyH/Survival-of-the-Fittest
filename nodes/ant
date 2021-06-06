@@ -8,38 +8,34 @@ import rospy # module for ROS APIs
 from geometry_msgs.msg import PoseWithCovarianceStamped, Point  # Msg of the position of the robot
 
 # http://docs.ros.org/en/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
-from nav_msgs.msg import OccupancyGrid, GridCells, #TODO: Odometry  # Msg of the path
+from nav_msgs.msg import OccupancyGrid, GridCells, Odometry  # Msg of the path
 
 class Ant():
     def __init__(self, n, m,  q, sigma_1, signma_2, mu):
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback, queue_size=1)
         self._pos_sub = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.pos_callback, queue_size=1)
         self._cmd_pub = rospy.Publisher('/cells', GridCells, queue_size=1)
+        self._odo_pub = rospy.Publisher('/odom', Odometry)
 
-       # self.loc =(n,m) #TODO: Might not need if the nest will return the grid coord 
 
-        # self.map = None  # type: OccupancyGrid 
-        # self.grid = None  # type: List[List[int]] Should just be 2D #TODO: Nest would do this 
-        self.pos = None  # type: Pos   # self.loc = (n, m) location in python
-        # self.nest_pos = None  # type: Pos #TODO: Leave this to the nest 
-
-        self.home = None
+        self.pos = None  # type: Pos  
+        self.home = None # type: Pos. The nest Position # TODO: This could just be the they first spawn in instead of hardcoding
         
-        #TODO: reperesenting position in ros_stage
-        self.flip_dir = False # TODO: WHenever we have food this is true rotate robo 180 # Type BOOlean Foward to the lef or to the right  
+        self.flip_dir = False # type: Boolean. Turns robot 180  
         
-        self.hasfood = False
-        self.removed = False
+        self.hasfood = False # type: Boolean. Keeps track of food 
+        self.removed = False # type: Boolean. Keeps track of whether the robot has been stopped or not
 
 
-        # self.q =q #TODO: Move to next for evap. 
         self.pheremones = 1 #TODO: Deposited 
         self.sigma_1 = sigma_1 
         self.sigma_2 = signma_2
-        self.mu = mu # Dictates  how much ant favors movement towarsds empty cells 
+        self.mu = mu # Dictates how much ant favors movement towarsds empty cells 
 
 
     def randomize_direction(self, grid):
+
+
         #Based on loc ask the nest for pos 
         #
         #Curr locatoin ask nest to find pheremone for the three possible choices 
