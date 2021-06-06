@@ -8,6 +8,7 @@ import rospy # module for ROS APIs
 from geometry_msgs.msg import Twist, Pose   # Msg of the position of the robot
 from nav_msgs.msg import Odometry  # Msg of the path
 from service_node.srv import*
+from ant_foraging.srv import  AntStart, AntStartResponse
 
 # Constants.
 FREQUENCY = 10 #Hz
@@ -23,7 +24,7 @@ class Ant():
     def __init__(self, sigma_1, signma_2, mu):
         "Constructor."
 
-        s = rospy.Service('controller', Controller, self._controller_callback)
+        self.ant_start = rospy.Service('ant_start', AntStart, self._ant_start_callback)
 
 
         # Setting up subscriber.
@@ -211,18 +212,21 @@ class Ant():
         else:
             self._close_obstacle = False
         
+    def _ant_start_callback(self, req):
+        self.move()
+        return
 
 def main():
     """Main function."""
     # Sleep for a few seconds to wait for the registration.
     rospy.sleep(2)
+    sigma1 = 0
+    sigma2 =0
+    mu=0
+
 
     # Initialization of the class for the simple motion.
-    ant_bot = Ant(sigma_1=, signma_2=, mu=)
-
-
-    ant_bot.move()
-
+    ant_bot = Ant(sigma_1=sigma1, signma_2=sigma2, mu=mu)
 
     # If interrupted, send a stop command.
     rospy.on_shutdown(ant_bot.stop)
