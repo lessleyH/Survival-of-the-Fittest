@@ -22,6 +22,10 @@ DEFAULT_CMD_VEL_TOPIC = 'cmd_vel'
 class Ant():
     def __init__(self, sigma_1, signma_2, mu):
         "Constructor."
+
+        s = rospy.Service('controller', Controller, self._controller_callback)
+
+
         # Setting up subscriber.
         self._odo_sub = rospy.Subscriber(DEFAULT_ODOM_TOPIC, Odometry, self._pos_callback)
         self._laser_sub = rospy.Subscriber(DEFAULT_SCAN_TOPIC, LaserScan, self._laser_callback, queue_size=1)
@@ -30,7 +34,7 @@ class Ant():
         self._cmd_pub = rospy.Publisher(DEFAULT_CMD_VEL_TOPIC, Twist, queue_size=1)
 
         self.pos = None  # type: Pose  
-        self.ishome = None # Nest positoin type: Pose
+        self.ishome = None # Nest positoin type: Boolean
         
         self.flip_dir = False # Turns robot 180 type: Boolean.   
         
@@ -46,6 +50,45 @@ class Ant():
         self._close_obstacle = False # TODO: Fix obstacle location
 
         self.orientation = 0
+
+    def move(self): 
+        "Function to move the robot in the desired direction and check if it has food, removed, or is home"
+        goal = self.randomize_direction()
+        if not self.removed:  #if the ant is not dead
+            self.move_helper(goal)
+  
+        rospy.wait_for_service('nest_update') 
+        try: 
+            update_nest = rospy.ServiceProxy('update_nest', UpdateNest)
+            resp2 = update_nest(self.pos.x, self.pos.y, self.hasfood) 
+            self.removed = resp2.outOfBounds
+            self.hasfood = resp2.isNest
+            self.ishome = resp2.isFood
+
+        except rospy.ServiceException as e:
+            print("Service call failed in the move function in ant: %s"%e)
+
+        if self.removed: 
+            self.pos.x = 0
+            self.pos.z = 0
+            self.stop()
+
+        else:
+            if self.hasfood:
+                self.flip_dir = True 
+                self.mu -= 0.3 # threshold for pheremones is stronger 
+
+                vel_msg = Twist()
+                vel_msg = (180*math.pi)/180 #Rotates 180 to return home
+                # Publishing our vel_msg
+                self._cmd_pub.publish(vel_msg)
+                self.flip_dir = False
+
+            if self.ishome:
+                self.hasfood = False
+                self.removed = True
+                self.stop()
+                rospy.loginfo("Hi, made it back!")
 
     def randomize_direction(self):
         "Function to randomize direction of the ant"
@@ -95,46 +138,6 @@ class Ant():
         goal.position.y = dir_y
 
         return goal
-
-    def move(self): 
-        "Function to move the robot in the desired direction and check if it has food, removed, or is home"
-        goal = self.randomize_direction()
-        if not self.removed:  #if the ant is not dead
-            self.move_helper(goal)
-  
-        rospy.wait_for_service('nest_update') 
-        try: 
-            update_nest = rospy.ServiceProxy('update_nest', UpdateNest)
-            resp2 = update_nest(self.pos.x, self.pos.y, self.hasfood) 
-            self.removed = resp2.outOfBounds
-            self.hasfood = resp2.isNest
-            self.ishome = resp2.isFood
-
-        except rospy.ServiceException as e:
-            print("Service call failed in the move function in ant: %s"%e)
-
-        if self.removed: 
-            self.pos.x = 0
-            self.pos.z = 0
-            self.stop()
-
-        else:
-            if self.hasfood:
-                self.flip_dir = True 
-                self.mu -= 0.3 # threshold for pheremones is stronger 
-
-                vel_msg = Twist()
-                vel_msg = (180*math.pi)/180 #Rotates 180 to return home
-                # Publishing our vel_msg
-                self._cmd_pub.publish(vel_msg)
-                self.flip_dir = False
-
-            if self.ishome:
-                self.hasfood = False
-                self.removed = True
-                self.stop()
-                rospy.loginfo("Hi, made it back!")
-
 
     def move_helper(self, goal): 
         """Moves the robot to the goal."""
@@ -211,13 +214,15 @@ class Ant():
 
 def main():
     """Main function."""
-
-       
     # Sleep for a few seconds to wait for the registration.
     rospy.sleep(2)
 
     # Initialization of the class for the simple motion.
-    ant_bot = Ant()
+    ant_bot = Ant(sigma_1=, signma_2=, mu=)
+
+
+    ant_bot.move()
+
 
     # If interrupted, send a stop command.
     rospy.on_shutdown(ant_bot.stop)
