@@ -135,6 +135,7 @@ class Nest():
         rospy.loginfo("NEST: handle_get_next_locations")
         newPos = self.pose_to_grid(req.x, req.y)
         choices = self.get_choices(newPos[0], newPos[1], req.dir) #returns list of lists of choices with [x, y, phermones]
+        rospy.loginfo(choices)
         #TODO: set each choice to a srv return variable
         response = GetNextLocationsResponse()
         response.x1 = choices[0][0]

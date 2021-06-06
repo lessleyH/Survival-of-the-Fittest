@@ -312,9 +312,9 @@ def main():
     # Initialization of the class for the simple motion.
     ant_bot = Ant(sigma_1=sigma1, signma_2=sigma2, mu=mu)
     rospy.loginfo("Hi, I'm init")
-    while not rospy.is_shutdown():
-        # rospy.loginfo("Hi, in LOOP")
-        x=5
+
+    rospy.spin()
+    rospy.on_shutdown(ant_bot.stop)
         
     #ant_bot.move()
     # If interrupted, send a stop command.
