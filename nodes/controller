@@ -22,8 +22,7 @@ class Controller():
 
     def start_simulation(self):
         for i in range(self.rounds):
-            return
-            #ant_start_client()
+            ant_start_client(1)
         # end_round_client()
 
     def ant_start_client(self):
