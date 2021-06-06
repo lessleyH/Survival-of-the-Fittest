@@ -3,22 +3,98 @@
 
 import random
 import rospy
-from ant_foraging.srv import InitNest, InitNestResponse
+import random
+from ant_foraging.srv import InitNest, InitNestResponse, EndRound, EndRoundResponse, AntStart, AntStartResponse
 
 '''
 Initializations	
-Keeps time/round/loops through things
+Keeps round/loops through things
 Sends message to nest that round has ended
 Send food locations to nest
 '''
 
-
 class Controller():
-    def __init__():
+    def __init__(self, rounds):
 
+        self.rounds = rounds
+        self.init_nest = rospy.Service('init_nest', InitNest, self.handle_init_nest)
+        self.start_simulation()
+
+    def start_simulation(self):
+        for i in range(self.rounds):
+            ant_start_client()
+        # end_round_client()
+
+    def ant_start_client(self):
+        rospy.wait_for_service('ant_start')
+        try:
+            ant_start = rospy.ServiceProxy('ant_start', AntStart)
+            resp = ant_start
+            return resp
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
+
+    def end_round_client(self):
+        rospy.wait_for_service('end_round')
+        try:
+            end_round = rospy.ServiceProxy('end_round', EndRound)
+            resp = end_round
+            return resp
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
+
+
+    # foodType 0 = large and rare
+    # foodType 1 = smal and common
+    def init_nest_variables(self, foodType):
+        i = random.randint(0,40)
+        j = random.randint(0,40)
+
+        points = []
+        num = 0
+        amt = 0
+
+        if foodType == 0:
+            num = 4
+            amt = 20
+        else:
+            num = 20
+            amt = 4
+        
+
+        for i in range(num):
+            rand_x = str(random.randint(0,40))
+            rand_y = str(random.randint(0,40))
+            if (rand_x, rand_y) not in points and not (rand_x == i and rand_y == j):
+                points.append((rand_x, rand_y))
+
+        # x,y,amt x,y,amt
+        foods = ""
+        for point in points:
+            foods += str(point[0]) + "," + str(point[0]) + "," + str(amt) + " "
+
+        return (i,j,foods)
+
+
+    def handle_init_nest(self, req):
+        checks = self.init_nest_variables(0)
+        response = InitNestResponse()
+        response.i = checks[0]
+        response.j = checks[1]
+        response.foods = checks[2]
+        return response
 
 def main():
     """Main function."""
+    # Sleep for a few seconds to wait for the registration.
+    rospy.sleep(2)
+
+    # Initialization of the class for the simple motion.
+    controller = Controller(100)
+    
+    rospy.spin()
+    # If interrupted, send a stop command.
+    rospy.on_shutdown(controller.stop)
 
 
 if __name__ == "__main__":
