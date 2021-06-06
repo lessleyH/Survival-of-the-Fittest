@@ -8,8 +8,7 @@ import rospy # module for ROS APIs
 from geometry_msgs.msg import Twist, Pose   # Msg of the position of the robot
 from nav_msgs.msg import Odometry  # Msg of the path
 from sensor_msgs.msg import LaserScan # message type for scan
-#from ant_foraging.srv import AntStart, AntStartResponse
-from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLocationsResponse, UpdateNestResponse
+from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLocationsResponse, UpdateNestResponse, AntStart, AntStartResponse
 
 # Constants.
 FREQUENCY = 10 #Hz
@@ -25,7 +24,7 @@ class Ant():
     def __init__(self, sigma_1, signma_2, mu):
         "Constructor."
 
-        #self.ant_start = rospy.Service('ant_start', AntStart, self._ant_start_callback)
+        self.ant_start = rospy.Service('ant_start', AntStart, self._ant_start_callback)
 
 
         # Setting up subscriber.

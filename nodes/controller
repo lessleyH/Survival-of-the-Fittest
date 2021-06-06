@@ -29,7 +29,7 @@ class Controller():
         rospy.wait_for_service('ant_start')
         try:
             ant_start = rospy.ServiceProxy('ant_start', AntStart)
-            resp = ant_start
+            resp = ant_start.b
             return resp
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
