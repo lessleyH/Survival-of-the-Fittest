@@ -6,126 +6,110 @@ import random
 # import of relevant libraries.
 import rospy # module for ROS APIs
 from geometry_msgs.msg import PoseWithCovarianceStamped, Point  # Msg of the position of the robot
-
+from std_msgs.msg import Float64 
 # http://docs.ros.org/en/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
-from nav_msgs.msg import OccupancyGrid, GridCells, #TODO: Odometry  # Msg of the path
+from nav_msgs.msg import OccupancyGrid, GridCells, Odometry  # Msg of the path
+from service_node.srv import*
 
 class Ant():
-    def __init__(self, n, m,  q, sigma_1, signma_2, mu):
+    def __init__(self, sigma_1, signma_2, mu):
         self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback, queue_size=1)
         self._pos_sub = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.pos_callback, queue_size=1)
         self._cmd_pub = rospy.Publisher('/cells', GridCells, queue_size=1)
+        self._odo_pub = rospy.Publisher('/odom', Odometry)
 
-       # self.loc =(n,m) #TODO: Might not need if the nest will return the grid coord 
-
-        # self.map = None  # type: OccupancyGrid 
-        # self.grid = None  # type: List[List[int]] Should just be 2D #TODO: Nest would do this 
-        self.pos = None  # type: Pos   # self.loc = (n, m) location in python
-        # self.nest_pos = None  # type: Pos #TODO: Leave this to the nest 
-
-        self.home = None
+        self.pos = None  # type: Pos  
+        self.ishome = None # type: Pos. The nest Position # TODO: This could just be the they first spawn in instead of hardcoding
         
-        #TODO: reperesenting position in ros_stage
-        self.flip_dir = False # TODO: WHenever we have food this is true rotate robo 180 # Type BOOlean Foward to the lef or to the right  
+        self.flip_dir = False # type: Boolean. Turns robot 180  
         
-        self.hasfood = False
-        self.removed = False
+        self.hasfood = False # type: Boolean. Keeps track of food 
+        self.removed = False # type: Boolean. Keeps track of whether the robot has been stopped or not
+        self.out_of_bounds = False
 
-
-        # self.q =q #TODO: Move to next for evap. 
-        self.pheremones = 1 #TODO: Deposited 
+        self.pheremones = None#TODO: Deposited 
         self.sigma_1 = sigma_1 
         self.sigma_2 = signma_2
-        self.mu = mu # Dictates  how much ant favors movement towarsds empty cells 
+        self.mu = mu # Dictates how much ant favors movement towarsds empty cells 
+        self.potential_coordinates = None
+
+    def randomize_direction(self): #TODO: Fix up service call(client)
+        direction = self.pos
+        rospy.wait_for_service('whatever_this_service_is_named') #TODO: Change the name to whatever the service is called
+
+        try: 
+            nest_update = rospy.ServiceProxy('current_grid_space', CurrentGridSpace)#TODO: Change to actual name
+            resp1 = nest_update(self.pos) 
+            self.removed = resp1.removed
+            self.pheremones = resp1.pheremones
+            self.potential_coordinates = resp1.coord 
+
+        except rospy.ServiceException as e:
+            print("Service call failed in the randomize direction function: %s"%e)
 
 
-    def randomize_direction(self, grid):
-        #Based on loc ask the nest for pos 
-        #
-        #Curr locatoin ask nest to find pheremone for the three possible choices 
-        #RETURN What dir it heads to 
+        left_loc = self.potential_coordinates[0]
+        front_loc = self.potential_coordinates[1]
+        right_loc = self.potential_coordinates[2]
 
-        p0 = grid.pheremones[self.loc[0], self.loc[1]+1] + grid.pheremones[self.loc[0]+1, self.loc[1]+1] + grid.pheremones[self.loc[0]-1, self.loc[1]+1]
-        p1 = grid.pheremones[self.loc[0]+1, self.loc[1]] + grid.pheremones[self.loc[0]+1, self.loc[1]+1] + grid.pheremones[self.loc[0]+1, self.loc[1]-1]
-        p2 = grid.pheremones[self.loc[0], self.loc[1]-1] + grid.pheremones[self.loc[0]+1, self.loc[1]-1] + grid.pheremones[self.loc[0]-1, self.loc[1]-1]
-        
-        ps = p0 + p1 + p2 
-        if ps != 0:
-            p0 /= ps
-            p1 /= ps
-            p2 /= ps
-            did = np.random.choice([0,1,2], 1, p=[p0,p1,p2])
+        #Update the Pheremones 
+        lp = self.pheremones[0]
+        fp = self.pheremones[1]
+        rp = self.pheremones[2]
 
-        else:
-            did = np.random.choice(4, 1)
-        if did == 0: #TODO: Fix into actua values 
-            direction = (0, 1) #forward 
-        elif did == 1:
-            direction = (1, 0)#forward right
-        elif did == 2:
-            direction = (0, -1)# forward left
+        p_m = 0.5 * (1 + np.tanh((lp + fp + rp)/100 - 1))
+        if np.random.choice(2, 1, p=[1-p_m,p_m]):
+            c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
+            p_left = 1/c * (self.mu + lp)**2
+            p_front = 1/c * (self.mu + fp)**2
+            p_right = 1/c * (self.mu + rp)**2
+            
+        next_loc = np.random.choice(["left_loc","right_loc","front_loc"], 1, p=[p_left,p_right,p_front])
+        if next_loc == "left_loc":
+            direction = left_loc
+        elif next_loc == "front_loc":
+            direction = front_loc
+        elif next_loc == "right_loc":
+            direction = right_loc
 
         return direction
 
-  
-    def move(self, grid): # send to nest get the center coord. do the physical calc for moving the robot there
-       # if you are out of bounds then stop moving
+    def move(self): # send to nest get the center coord. do the physical calc for moving the robot there
+        # if you are out of bounds then stop moving
         # check if it has food or home
-        if not self.removed:
-            left_loc = (self.loc[0]+self.dir[1]+self.dir[0], self.loc[1]-self.dir[0]+self.dir[1])
-            front_loc = (self.loc[0]+self.dir[0], self.loc[1]+self.dir[1])
-            right_loc = (self.loc[0]-self.dir[1]+self.dir[0], self.loc[1]+self.dir[0]+self.dir[1])
-        
-            lp = grid.pheremones[left_loc[0], left_loc[1]]
-            fp = grid.pheremones[front_loc[0], front_loc[1]]
-            rp = grid.pheremones[right_loc[0], right_loc[1]]
-            
-            p_m = 0.5 * (1 + np.tanh((lp + fp + rp)/100 - 1))
-            if np.random.choice(2, 1, p=[1-p_m,p_m]):
-                c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
-                p_left = 1/c * (self.mu + lp)**2
-                p_front = 1/c * (self.mu + fp)**2
-                p_right = 1/c * (self.mu + rp)**2
-                
-                next_loc = np.random.choice(["left_loc","right_loc","front_loc"], 1, p=[p_left,p_right,p_front])
-                if next_loc == "left_loc" and grid.occupancy[left_loc[0], left_loc[1]] < Am:
-                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
-                    self.loc = left_loc
-                    grid.occupancy[self.loc[0], self.loc[1]] += 1
-                elif next_loc == "front_loc" and grid.occupancy[front_loc[0], front_loc[1]] < Am:
-                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
-                    self.loc = front_loc
-                    grid.occupancy[self.loc[0], self.loc[1]] += 1
-                elif next_loc == "right_loc" and grid.occupancy[right_loc[0], right_loc[1]] < Am:
-                    grid.occupancy[self.loc[0], self.loc[1]] -= 1
-                    self.loc = right_loc
-                    grid.occupancy[self.loc[0], self.loc[1]] += 1
+        dir = self.randomize_direction()
+        self.move_helper(dir)
+  
+        rospy.wait_for_service('nest_update') #TODO: Change the name to whatever the service is called
+        try: 
+            nest_update = rospy.ServiceProxy('nest_update', NestUpdate)#TODO: Change to actual name
+            resp2 = nest_update(self.pos) 
+            self.removed = resp2.removed
+            self.hasfood = resp2.pheremones
+            self.ishome = resp2.nest
 
-                    
-                if grid.food[self.loc[0], self.loc[1]] > 0:
-                    if not self.hasfood:
-                        g.food[self.loc[0], self.loc[1]] -= 1
-                        self.dir = (self.dir[0]*-1, self.dir[1]*-1) # Flips direction
-                        self.hasfood = True
-                        
-                        
-                if (self.home[0]-1 < self.loc[0] < self.home[0]+1) and (self.home[1]-1 < self.loc[1] < self.home[1]+1) and self.hasfood:
-                    self.hasfood = False
-                    grid.occupancy[self.home[0], self.home[1]] -= 1
-                    grid.food_drop -= 1
-                    self.removed = True
-                    print("Brought back food!")
-                    
-                    
+        except rospy.ServiceException as e:
+            print("Service call failed in the randomize direction function: %s"%e)
+
+        if self.removed: 
+            self.stop()
+
+        else:
             if self.hasfood:
-                if grid.pheremones[self.loc[0], self.loc[1]] < self.sigma_2:
-                    print(34)
-                    #TODO: Set the threshold for pheremone to be stronger so it send it back to the nest  #TODO: decrease MU
-                    #TODO: pheremones back
-            else:
-                if grid.pheremones[self.loc[0], self.loc[1]] < self.sigma_1:
-                    grid.pheremones[self.loc[0], self.loc[1]] += 1.
- 
+                self.flip_dir = True 
+                self.mu -= 0.3 # threshold for pheremones is stronger 
+                #TODO: Figure out how to make them come back
+                        
+
+            if self.ishome:
+                self.hasfood = False
+                self.removed = True
+                rospy.loginfo("Hi, made it back!")
+
+
+    def move_helper(self, direction):
+        "This is where I will actually move the robot. Should update self.pos before sending it to the server"
+        print(42)
 
     #pos and from the center 
     def pos_callback(self, pose):
@@ -149,6 +133,12 @@ class Ant():
                     pass
 
             self.calc_grid()
+
+    def _callback(self, msg):
+        self.msg_from_nest = msg.data
+        rospy.loginfo("Hi, this is from an ant: {}".format(self.msg_to_nest))
+        self._chat_pub.publish(self.msg_to_nest)
+
 
     def map_callback(self, cb_map):
         """:type cb_map: OccupancyGrid"""
@@ -185,6 +175,7 @@ class Ant():
     def stop(self):
         """Stop the robot."""
         twist_msg = Twist()
+        self.removed = True
         self._cmd_pub.publish(twist_msg)
 
 def main():
