@@ -35,7 +35,9 @@ class Ant():
         # Setting up publishers
         self._cmd_pub = rospy.Publisher(DEFAULT_CMD_VEL_TOPIC, Twist, queue_size=1)
 
-        self.pos = None  # type: Pose  
+        self.pos_y = None  
+        self.pos_x = None  
+        self.pos_z = None
         self.ishome = None # Nest positoin type: Boolean
         
         self.flip_dir = False # Turns robot 180 type: Boolean.   
@@ -62,7 +64,7 @@ class Ant():
         rospy.wait_for_service('nest_update') 
         try: 
             update_nest = rospy.ServiceProxy('update_nest', UpdateNest)
-            resp2 = update_nest(self.pos.x, self.pos.y, self.hasfood) 
+            resp2 = update_nest(self.pos_x, self.pos_y, self.hasfood) 
             self.removed = resp2.outOfBounds
             self.hasfood = resp2.isNest
             self.ishome = resp2.isFood
@@ -71,8 +73,8 @@ class Ant():
             print("Service call failed in the move function in ant: %s"%e)
 
         if self.removed: 
-            self.pos.x = 0
-            self.pos.z = 0
+            self.pos_x = 0
+            self.pos_z = 0
             self.stop()
 
         else:
@@ -99,7 +101,7 @@ class Ant():
 
         try: 
             nest_update = rospy.ServiceProxy('get_next_locations', GetNextLocations)
-            resp1 = nest_update(self.pos.x, self.pos.y, self.orientation) 
+            resp1 = nest_update(self.pos_x, self.pos_y, self.orientation) 
             self.removed = resp1.removed
             self.pheremones = [resp1.p1, resp1.p2, resp1.p3]
             self.potential_coordinates = [(resp1.x1, resp1.y1),(resp1.x2, resp1.y2),(resp1.x3, resp1.y3)]
@@ -173,7 +175,7 @@ class Ant():
 
     def euclidean_distance(self, goal):
         """Euclidean distance between current pose and the goal."""
-        return math.sqrt(math.pow((goal.position.x - self.pos.x), 2) + math.pow((goal.position.y - self.pos.y), 2))
+        return math.sqrt(math.pow((goal.position.x - self.pos_x), 2) + math.pow((goal.position.y - self.pos_y), 2))
 
     def linear_vel(self, goal, constant=1.5):
         """helper function to euclidean distance."""
@@ -181,21 +183,20 @@ class Ant():
 
     def steering_angle(self, goal):
         """helper function to angular velocity to help steer"""
-        orientation = math.atan2(goal.position.y - self.pos.y, goal.position.x - self.pos.x)
+        orientation = math.atan2(goal.position.y - self.pos_y, goal.position.x - self.pos_x)
         self.orientation += orientation
         return orientation
 
     def angular_vel(self, goal, constant=6):
         """Process angular velocity."""
-        return constant * (self.steering_angle(goal) - self.pos.z)
+        return constant * (self.steering_angle(goal) - self.pos_z)
 
     #pos and from the center 
     def _pos_callback(self, data):
         """Processing of odom position message."""
-        self.pos = data
-        self.pos.x = round(data.pose.pose.position.x, 2)
-        self.pos.y = round(data.pose.pose.position.y, 2)
-        self.pos.z = data.pose.pose.position.z
+        self.pos_x = round(data.pose.pose.position.x, 2)
+        self.pos_y = round(data.pose.pose.position.y, 2)
+        self.pos_z = data.pose.pose.position.z
 
     def stop(self):
         """Stop the robot. Borrowed from Simple Motion"""
