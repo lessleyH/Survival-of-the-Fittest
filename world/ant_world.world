@@ -1,6 +1,6 @@
  window
  (
-  size [ 635 666 ] # in pixels
+  size [ 600 600 ] # in pixels
   scale 15   # pixels per meter
   center [ 0 0 ]
   rotate [ 0.000  0.000 ]
@@ -37,7 +37,6 @@ define ant position
 
   localization "odom"
   odom_error [0.03 0.03 0.00 0.05]
-  velocity [ 10.0 0.0 0.0 1.0]
   topurg(pose [ 0.050 0.000 0 0.000 ])
 )
 
@@ -65,4 +64,6 @@ define floorplan model
 
 
 # throw in a robot
-ant( pose [ 0.0 0.0 0.0 0.0 ] name "ant_1" color "blue")
+ant( pose [ 00.0 0.0 0.0 0.0 ] name "ant_1" color "blue")
+ant( pose [ -20.0 20.0 0.0 0.0 ] name "ant_2" color "red")
+ant( pose [ 20.59 -20.0 0.0 0.0 ] name "ant_3" color "green")

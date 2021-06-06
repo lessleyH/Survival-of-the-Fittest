@@ -1,25 +1,130 @@
 #!/usr/bin/env python
 #The line above is important so that this file is interpreted with Python when running it.
 
-#The line above is important so that this file is interpreted with Python when running it.
-
 import numpy as np
 import random
 import rospy
+from Survival-of-the-Fittest.srv import GetNextLocations, UpdateNest, InitNest
+
+# ask for what current grid space is in (need coordinates and direction!)
+    # answer three choices center coordinates of the 3 choices to move to and phermones
+# need to check for out of bounds / then nest / then food (Booleans) (also send if holding food)
+    # automatically update phermone count
+
+DEPOSIT_RATE = 1
+EVAPORATION_RATE = 1 #evaporation rate
 
 class Nest():
-    def __init__(self):
-        print(42)
+    def __init__(self, dimension, i, j, foods):
+
+        #TODO:get food locaitons from god 
+        self.nest_i = i
+        self.nest_j = j
+        self.nest_food_stash = 0
+        self.grid = [ [0] * dimension for i in range(dimension)]
+        self.populate_food(foods)
+        self.get_next_locations = rospy.Service('get_next_locations', GetNextLocations, self.handle_get_next_locations)
+        self.update_nest = rospy.Service('nest_update', UpdateNest, self.handle_nest_update)
 
 
+    def populate_food(self, food_list):
+        #food_list list of tuples [(i,j,amount)]
+        #place each food on grid
+        for food in food_list:
+            self.grid[food[0]][food[1]] = -food[2]
+
+    #map coordinate to grid
+    def pose_to_grid(self, x, y):
+        i = int(x + 20)
+        j = int(y + 20)
+        return (i,j)
+
+    #map grid lcoation to pose
+    def grid_to_pose(self, i, j):
+        x = int(i - 20) + 0.5
+        y = int(j - 20) + 0.5
+        return (x,y)
+    
+    #return the next possible coordinates from a given location
+    def get_choices(self, i, j, direction):
+        choices = []
+
+        #return the choices with phermones
+        for choice in choices:
+            choice.append(self.grid[choice[0]][choice[1]])
+
+        return choices
+
+    def update_nest(self, x, y, hasFood):
+        gridpts = self.pose_to_grid(x, y)
+        i = gridpts[0]
+        j = gridpts[1]
+        result = []
+        #check out of bounds
+        if i < 0 or i > len(self.grid) or j < 0 or j > len(self.grid[0]):
+            result.append(1)
+        else:
+            result.append(0)
+
+        #check is nest
+        if i == self.nest_i and j == self.nest_j:
+            if hasFood:
+                self.nest_food_stash += 1
+            result.append(1)
+        else:
+            result.append(0)
+
+        #check food
+        if self.grid[i][j] < 0:
+            if not hasFood:
+                self.grid[i][j] += 1
+            result.append(1)
+        else:
+            result.append(0)
+
+        #if not above, update phermone
+        if sum(result) == 0:
+            self.grid[i][j] += DEPOSIT_RATE
+
+    def handle_get_next_locations(self, req):
+        newPos = self.pose_to_grid(req.x, req.y)
+        choices = self.get_choices(newPos[0], newPos[1], req.dir) #returns list of lists of choices with [x, y, phermones]
+        #TODO: set each choice to a srv return variable
+        return GetNextLocationsResponse(req.a + req.b)
+
+    def handle_nest_update(self, req):
+        checks = self.update_nest(req.a, req.b, req.c)
+        #TODO: return the boolean values of bounds, nest, food nicely
+        return NestUpdateResponse(req.a + req.b)
+
+
+    # after each round, evaporate
+    def evaporate(self):
+        for i in range(len(self.grid)):
+            for j in range(len(self.grid[0])):
+                self.grid[i][j] -= 1
+        
 def main():
     """Main function."""
-    print(42)
+    rospy.wait_for_service('init_nest') 
+    try:
+        init_nest = rospy.ServiceProxy('init_nest', InitNest)
+        response = init_nest()
+        i = response.i
+        j = response.j
+        foodList = response.foods
+        nest = Nest(40, i, j, foodList)
+    except rospy.ServiceException as e:
+        print("Service call failed: %s"%e)
+    
+    rospy.spin()
+    rospy.on_shutdown(nest.stop)
 
 
 if __name__ == "__main__":
     """Run the main function."""
     rospy.init_node('Nest')
+    rospy.sleep(2)   
     try:
         main()
     except rospy.ROSInterruptException:
