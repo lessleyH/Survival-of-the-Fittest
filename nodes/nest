@@ -89,6 +89,10 @@ class Nest():
         #return the choices with phermones
         for choice in choices:
             choice.append(self.grid[choice[0]][choice[1]])
+            toCoord = self.grid_to_pose(choice[0], choice[1])
+            choice[0] = toCoord[0]
+            choice[1] = toCoord[1]
+
         rospy.loginfo("NEST: Makes Choices")
         return choices
 
@@ -149,6 +153,8 @@ class Nest():
         rospy.loginfo("NEST: handle_nest_update")
         checks = self.update_the_nest(req.x, req.y, req.hasFood)
         #TODO: return the boolean values of bounds, nest, food nicely
+        rospy.loginfo("NEST: got checks")
+        rospy.loginfo(checks)
         response = UpdateNestResponse()
         response.outOfBounds = checks[0]
         response.isNest = checks[1]
