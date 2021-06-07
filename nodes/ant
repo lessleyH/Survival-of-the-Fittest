@@ -142,6 +142,9 @@ class Ant():
         fp = self.pheremones[1]
         rp = self.pheremones[2]
 
+        p_left = 0
+        p_right = 0  
+        p_front = 0
 
         p_m = 0.5 * (1 + np.tanh((lp + fp + rp)/100 - 1))
         if np.random.choice([0,1], 1, p=[1-p_m,p_m]):
@@ -150,12 +153,12 @@ class Ant():
             p_left = 1/c * (self.mu + lp)**2
             p_front = 1/c * (self.mu + fp)**2
             p_right = 1/c * (self.mu + rp)**2
-        else: 
-            goal = Pose()
-            goal.position.x = self.pos_x
-            goal.position.y = self.pos_y
-            rospy.loginfo("ANT: Same goal")
-            return goal 
+        # else: 
+        #     goal = Pose()
+        #     goal.position.x = self.pos_x
+        #     goal.position.y = self.pos_y
+        #     rospy.loginfo("ANT: Same goal")
+        #     return goal 
             
         rospy.loginfo("ANT rnd choice") 
 
