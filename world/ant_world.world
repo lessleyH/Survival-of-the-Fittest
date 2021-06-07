@@ -62,9 +62,14 @@ define floorplan model
 
  interval_sim 100  # simulation timestep in milliseconds
 
+<<<<<<< HEAD
 
 # throw in a robot
 # ant( pose [ 00.0 0.0 0.0 0.0 ] name "ant_1" color "blue")
 
 # ant( pose [ -20.0 20.0 0.0 0.0 ] name "ant_2" color "red")
 # ant( pose [ 20.59 -20.0 0.0 0.0 ] name "ant_3" color "green")
+=======
+ant( pose [ 00.0 0.0 0.0 0.0 ] name "ant_1" color "blue")
+
+>>>>>>> 7927b368367132c1cce4a8f4f97f89beb095d382
