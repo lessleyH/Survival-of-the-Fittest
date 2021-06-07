@@ -83,4 +83,3 @@ erratic( pose [ -8.0 0.0 0.0 0.0 ] name "bot_8" color "blue")
 erratic( pose [ -10.0 0.0 0.0 0.0 ] name "bot_9" color "blue")
 
 
-
