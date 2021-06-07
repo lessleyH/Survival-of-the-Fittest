@@ -8,15 +8,44 @@
        See http://wiki.ros.org/Clock
        Note: set to false for deploying to a real robot.
   -->
+  <arg name="waypoints" default='0' />
+	<arg name="robotName1" default="robot_0" />
+	<arg name="robotName2" default="robot_1" />
+
   <master auto="start"/>
   <arg name="use_sim_time" default="true"/>
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
 
   <!-- start world -->
-  <node name="stageros" pkg="stage_ros" type="gazebo" 
-   args="$(rospack find ant_foraging)/world/ant_world.world" respawn="false" output="screen" />
+  <node name="stageros" pkg="stage_ros" type="stageros" args="$(find ant_foraging)/world/ant_world.world" respawn="false" output="screen">
+   <param name="base_watchdog_timeout" value="0.2"/>
+  </node>
 
-   
+
+ <!-- BEGIN ROBOT 0 -->
+  <group ns="robot_0">
+    <param name="tf_prefix" value="$(arg robotName1)" />
+    <include file="$(find ant_foraging)/launch/one_robot.launch">
+    	<arg name="namespace" value="$(arg robotName1)"/>
+    	<arg name="initial_pose_x" value="0.0"/>
+    	<arg name="initial_pose_y" value="0.0"/>
+    	<arg name="initial_pose_a" value="0.0"/>
+    </include>
+  </group>
+  <!-- END ROBOT 0 -->
+
+
+  <!-- BEGIN ROBOT 1 -->
+  <group ns="robot_1">
+    <param name="tf_prefix" value="$(arg robotName2)" />
+    <include file="$(find ant_foraging)/launch/one_robot.launch">
+    	<arg name="namespace" value="$(arg robotName2)"/>
+    	<arg name="initial_pose_x" value="1.0"/>
+    	<arg name="initial_pose_y" value="1.0"/>
+    	<arg name="initial_pose_a" value="0.0"/>
+    </include>
+  </group>
+  <!-- END ROBOT 1 -->
 
 </launch>
