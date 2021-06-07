@@ -20,7 +20,7 @@ define topurg ranger
 (
 	sensor( 			
     range [ 0.0  10.0 ]
-    fov 135
+    fov 270.25
    samples 1081
   )
 
@@ -29,15 +29,17 @@ define topurg ranger
   size [ 0.050 0.050 0.100 ]
 )
 
-define ant position
+define erratic position
 (
   size [0.350 0.350 0.250]
   origin [0.000 0.000 0.000 0.000]
-  drive "omni"
+  gui_nose 1
+  drive "diff"
 
   localization "odom"
   odom_error [0.03 0.03 0.00 0.05]
-  topurg(pose [ 0.050 0.000 0 0.000 ])
+  #topurg(pose [ 0.050 0.000 0 0.000 0.000 ])
+  #topurg(pose [ -0.050 0.000 0 0.000 180.000 ])
 )
 
 define floorplan model
@@ -62,5 +64,23 @@ define floorplan model
 
  interval_sim 100  # simulation timestep in milliseconds
 
-ant( pose [ 00.0 0.0 0.0 0.0 ] name "ant_1" color "blue")
+ window(
+   size [ 745 448 ]
+
+   rotate [14.0 -30]
+   scale 42.175
+ )
+
+erratic( pose [ 00.0 0.0 0.0 0.0 ] name "bot_0" color "blue")
+erratic( pose [ 2.0 0.0 0.0 0.0 ] name "bot_1" color "blue")
+erratic( pose [ 4.0 0.0 0.0 0.0 ] name "bot_2" color "blue")
+erratic( pose [ 6.0 0.0 0.0 0.0 ] name "bot_3" color "blue")
+erratic( pose [ 10.0 0.0 0.0 0.0 ] name "bot_4" color "blue")
+erratic( pose [ -2.0 0.0 0.0 0.0 ] name "bot_5" color "blue")
+erratic( pose [ -4.0 0.0 0.0 0.0 ] name "bot_6" color "blue")
+erratic( pose [ -6.0 0.0 0.0 0.0 ] name "bot_7" color "blue")
+erratic( pose [ -8.0 0.0 0.0 0.0 ] name "bot_8" color "blue")
+erratic( pose [ -10.0 0.0 0.0 0.0 ] name "bot_9" color "blue")
+
+
 

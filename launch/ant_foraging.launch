@@ -8,44 +8,68 @@
        See http://wiki.ros.org/Clock
        Note: set to false for deploying to a real robot.
   -->
-  <arg name="waypoints" default='0' />
-	<arg name="robotName1" default="robot_0" />
-	<arg name="robotName2" default="robot_1" />
-
   <master auto="start"/>
   <arg name="use_sim_time" default="true"/>
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
 
+ <arg name="bot_0"  default="robot_0"/>
+  <arg name="bot_1" default="robot_1"/>
+  <arg name="bot_2"  default="robot_2"/>
+  <arg name="bot_3"  default="robot_3"/>
+  <arg name="bot_4"  default="robot_4"/>
+  <arg name="bot_5"  default="robot_5"/>
+  <arg name="bot_6"  default="robot_6"/>
+  <arg name="bot_7"  default="robot_7"/>
+  <arg name="bot_8"  default="robot_8"/>
+  <arg name="bot_9"  default="robot_9"/>
+
+  <arg name="sigma_1" default="1"/>
+  <arg name="sigma_2" default="1"/>
+  <arg name="mu" default="1"/>
+
+
+
   <!-- start world -->
-  <node name="stageros" pkg="stage_ros" type="stageros" args="$(find ant_foraging)/world/ant_world.world" respawn="false" output="screen">
-   <param name="base_watchdog_timeout" value="0.2"/>
-  </node>
+  <node name="stageros" pkg="stage_ros" type="stageros" args="$(find ant_foraging)/world/ant_world.world"  respawn="false" output="screen"/>
+
+<!--node pkg="ant_foraging" type="ant_foraging" name="Ant" output="screen"/>
+<node pkg="ant_foraging" type="ant_foraging" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2 _mu:=$(arg mu))" name="Ant" output="screen"/>
+  -->
 
 
- <!-- BEGIN ROBOT 0 -->
-  <group ns="robot_0">
-    <param name="tf_prefix" value="$(arg robotName1)" />
-    <include file="$(find ant_foraging)/launch/one_robot.launch">
-    	<arg name="namespace" value="$(arg robotName1)"/>
-    	<arg name="initial_pose_x" value="0.0"/>
-    	<arg name="initial_pose_y" value="0.0"/>
-    	<arg name="initial_pose_a" value="0.0"/>
-    </include>
+ <!-- BEGIN ROBOTS -->
+  <group ns = "$(arg bot_0)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
   </group>
-  <!-- END ROBOT 0 -->
-
-
-  <!-- BEGIN ROBOT 1 -->
-  <group ns="robot_1">
-    <param name="tf_prefix" value="$(arg robotName2)" />
-    <include file="$(find ant_foraging)/launch/one_robot.launch">
-    	<arg name="namespace" value="$(arg robotName2)"/>
-    	<arg name="initial_pose_x" value="1.0"/>
-    	<arg name="initial_pose_y" value="1.0"/>
-    	<arg name="initial_pose_a" value="0.0"/>
-    </include>
+  <group ns = "$(arg bot_1)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
   </group>
-  <!-- END ROBOT 1 -->
+  <group ns = "$(arg bot_2)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_3)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_4)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_5)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_6)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_7)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_8)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_9)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+
+  
 
 </launch>
