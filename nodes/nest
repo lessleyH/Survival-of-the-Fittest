@@ -6,7 +6,7 @@ import random
 import rospy
 from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLocationsResponse, UpdateNestResponse, EndRound, EndRoundResponse
 
-DEPOSIT_RATE = 1
+DEPOSIT_RATE = 10
 EVAPORATION_RATE = 1 #evaporation rate
 
 class Nest():

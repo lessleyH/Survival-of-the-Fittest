@@ -94,7 +94,7 @@ class Ant():
                 self.mu -= 0.3 # threshold for pheremones is stronger 
 
                 vel_msg = Twist()
-                vel_msg = (180*math.pi)/180 #Rotates 180 to return home
+                vel_msg.angular.z = (180*math.pi)/180 #Rotates 180 to return home
                 # Publishing our vel_msg
                 self._cmd_pub.publish(vel_msg)
                 self.flip_dir = False
@@ -106,7 +106,7 @@ class Ant():
                 self.mu = self.mu_og
                 
                 vel_msg = Twist()
-                vel_msg = (180*math.pi)/180 #Rotates 180 to return home
+                vel_msg.angular.z = (180*math.pi)/180 #Rotates 180 to return home
                 # Publishing our vel_msg
                 self._cmd_pub.publish(vel_msg)
                 self.flip_dir = False
@@ -304,21 +304,24 @@ def main():
     """Main function."""
     # Sleep for a few seconds to wait for the registration.
     rospy.sleep(2)
-    sigma1 = 1
-    sigma2 =1
-    mu=1
 
-
+    # Set parameters
+    sigma1, sigma2, mu = 1,1,1
+ 
     # Initialization of the class for the simple motion.
     ant_bot = Ant(sigma_1=sigma1, signma_2=sigma2, mu=mu)
-    rospy.loginfo("Hi, I'm init")
 
-    rospy.spin()
-    rospy.on_shutdown(ant_bot.stop)
-        
+    rospy.loginfo("Hi, I'm init")
     #ant_bot.move()
+
+    try:
+        rospy.spin()
+
+    except rospy.ROSInterruptException:
+        rospy.logerr("ROS node interrupted.")
+    
     # If interrupted, send a stop command.
-    # rospy.on_shutdown(ant_bot.stop)
+    rospy.on_shutdown(ant_bot.stop)
 
 if __name__ == "__main__":
     """Run the main function."""
