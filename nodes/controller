@@ -42,11 +42,11 @@ class Controller():
 
     def end_round_client(self, num):
         rospy.loginfo("Controller: End Round client") 
-        rospy.wait_for_service('/robot_{}/ant_start'.format(num))
+        rospy.wait_for_service('end_round')
         try:
-            end_round = rospy.ServiceProxy('/robot_{}/ant_start'.format(num), AntStart)
-            resp = end_round(num)
-            return resp.a
+            end_round = rospy.ServiceProxy('end_round', EndRound)
+            resp = end_round()
+            return resp.b
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
