@@ -30,22 +30,23 @@ class Controller():
             self.end_round_client()
 
     def ant_start_client(self, num):
-        rospy.loginfo("Controller: Ant-start Client") 
-        rospy.wait_for_service('ant_start')
-        try:
-            ant_start = rospy.ServiceProxy('ant_start', AntStart)
-            resp = ant_start(1)
-            return resp.b
-        except rospy.ServiceException as e:
-            print("Service call failed: %s"%e)
+            rospy.loginfo("Controller: Ant-start Client") 
+            rospy.wait_for_service('/robot_{}/ant_start'.format(num))
+            try:
+                ant_start = rospy.ServiceProxy('/robot_{}/ant_start'.format(num), AntStart)
+                resp = ant_start(num)
+                return resp.b
+            except rospy.ServiceException as e:
+                print("Service call failed: %s"%e)
+        
 
-    def end_round_client(self):
+    def end_round_client(self, num):
         rospy.loginfo("Controller: End Round client") 
-        rospy.wait_for_service('end_round')
+        rospy.wait_for_service('/robot_{}/ant_start'.format(num))
         try:
-            end_round = rospy.ServiceProxy('end_round', EndRound)
-            resp = end_round(1)
-            return resp
+            end_round = rospy.ServiceProxy('/robot_{}/ant_start'.format(num), AntStart)
+            resp = end_round(num)
+            return resp.a
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
