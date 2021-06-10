@@ -4,7 +4,7 @@ Lessley Hernandez, Danielle Fang, and Haowen Liu,
 
 Final project for multi-system robotics on foraging with ant optimization. 
 
-Abstract— Animal behavior has inspired many algorithms and strategies in robotics work due to the efficiency of these systems honed by nature. In this work we explore ant foraging behavior of how ants are able to efficiently gather food through implicit coordination using the pheromone trails deposited as the ant travels. We use a virtual environment stage to efficiently model a large swarm of ants foraging in food in an unknown grid representation of a map. We then run experiments altering different environmental factors such as population of ants in the field and type of food source available to discover which scenario is able to maximize the amount of food foraged
+Abstract— Animal behavior has inspired many algorithms and strategies in robotics work due to the efficiency of these systems honed by nature. In this work we explore ant foraging behavior of how ants are able to efficiently gather food through implicit coordination using the pheromone trails deposited as the ant travels. We use a virtual environment stage to efficiently model a large swarm of ants foraging in food in an unknown grid representation of a map. We then run experiments altering different environmental factors such as population of ants in the field and type of food source available to discover which scenario is able to maximize the amount of food foraged.
 
 ## Requirments 
 - ROS -- tested on Melodic, but other versions may work.
