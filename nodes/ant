@@ -53,7 +53,7 @@ class Ant():
         self.mu_og = mu
         self.mu = mu # Dictates how much ant favors movement towarsds empty cells 
         self.potential_coordinates = None
-        self._close_obstacle = False # TODO: Fix obstacle location
+        self._close_obstacle = False 
 
         self.orientation = 0
 

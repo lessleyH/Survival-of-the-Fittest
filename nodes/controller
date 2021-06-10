@@ -15,27 +15,31 @@ Send food locations to nest
 
 class Controller():
     def __init__(self, rounds):
+        "Constructor."
         self.rounds = rounds
         self.init_nest = rospy.Service('init_nest', InitNest, self.handle_init_nest)
         self.start_simulation()
 
     def start_simulation(self):
+        "This function initiates the simulation"
         for i in range(self.rounds): 
             for ant in range(30):
                 self.ant_start_client(ant)
             self.end_round_client()
 
     def ant_start_client(self, num):
-            rospy.wait_for_service('/robot_{}/ant_start'.format(num))
-            try:
-                ant_start = rospy.ServiceProxy('/robot_{}/ant_start'.format(num), AntStart)
-                resp = ant_start(num)
-                return resp.b
-            except rospy.ServiceException as e:
-                print("Service call failed: %s"%e)
+        "This function starts the ant class"
+        rospy.wait_for_service('/robot_{}/ant_start'.format(num))
+        try:
+            ant_start = rospy.ServiceProxy('/robot_{}/ant_start'.format(num), AntStart)
+            resp = ant_start(num)
+            return resp.b
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
         
 
     def end_round_client(self):
+        "This function ends the simulation"
         rospy.wait_for_service('end_round')
         try:
             end_round = rospy.ServiceProxy('end_round', EndRound)
@@ -48,6 +52,7 @@ class Controller():
     # foodType 0 = large and rare
     # foodType 1 = small and common
     def init_nest_variables(self, foodType):
+        "This function initializes the nest variables like food and the type of food."
         i = random.randint(0,39)
         j = random.randint(0,39)
 
@@ -84,7 +89,7 @@ class Controller():
 
 
     def handle_init_nest(self, req):
-
+        "This function takes care of initializing the nest node with it's nest values"
         checks = self.init_nest_variables(1)
         response = InitNestResponse()
         response.i = checks[0]
