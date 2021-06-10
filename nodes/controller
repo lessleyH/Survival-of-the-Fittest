@@ -28,13 +28,12 @@ class Controller():
             rospy.loginfo(i) 
             for ant in range(10):
                 self.ant_start_client(ant)
-                rospy.loginfo("Controller: Ant num:") 
-                rospy.loginfo(ant) 
             self.end_round_client()
 
     def ant_start_client(self, num):
             rospy.loginfo("Controller: Ant-start Client") 
-            rospy.wait_for_service('/robot_{}/ant_start'.format(num))
+            rospy.loginfo(num) 
+            rospy.wait_for_service('/robot_{}/ant_start'.format(num), 0.5)
             try:
                 ant_start = rospy.ServiceProxy('/robot_{}/ant_start'.format(num), AntStart)
                 resp = ant_start(num)
