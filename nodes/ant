@@ -92,7 +92,7 @@ class Ant():
             if self.hasfood:
                 rospy.loginfo("WE HAVE FOOD") 
                 self.flip_dir = True 
-                self.mu = 0.3 # threshold for pheremones is stronger 
+                self.mu = 4.5 # threshold for pheremones is stronger 
 
                 vel_msg = Twist()
                 vel_msg.angular.z = (180*math.pi)/180 #Rotates 180 to return home
