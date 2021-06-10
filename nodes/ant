@@ -92,7 +92,7 @@ class Ant():
             if self.hasfood:
                 rospy.loginfo("WE HAVE FOOD") 
                 self.flip_dir = True 
-                self.mu = 4.5 # threshold for pheremones is stronger 
+                self.mu = 1.5 # threshold for pheremones is stronger 
 
                 vel_msg = Twist()
                 vel_msg.angular.z = (180*math.pi)/180 #Rotates 180 to return home
@@ -143,17 +143,17 @@ class Ant():
         fp = self.pheremones[1]
         rp = self.pheremones[2]
 
-        p_left = 0
-        p_right = 0  
-        p_front = 0
+        # p_left = 0
+        # p_right = 0  
+        # p_front = 0
 
         p_m = 0.5 * (1 + np.tanh((lp + fp + rp)/100 - 1))
-        if np.random.choice([0,1], 1, p=[1-p_m,p_m]):
-            c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
-            rospy.loginfo(c)
-            p_left = 1/c * (self.mu + lp)**2
-            p_front = 1/c * (self.mu + fp)**2
-            p_right = 1/c * (self.mu + rp)**2
+        # if np.random.choice([0,1], 1, p=[1-p_m,p_m]):
+        c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
+        rospy.loginfo(c)
+        p_left = 1/c * (self.mu + lp)**2
+        p_front = 1/c * (self.mu + fp)**2
+        p_right = 1/c * (self.mu + rp)**2
     
             
         rospy.loginfo("ANT rnd choice") 
@@ -305,9 +305,9 @@ def main():
     rospy.sleep(2)
 
     # Set parameters
-    sigma1 = rospy.get_param("~sigma_1",1)
-    sigma2 = rospy.get_param("~sigma_2",1)
-    mu = rospy.get_param("~mu",1)
+    sigma1 = rospy.get_param("~sigma_1",48)
+    sigma2 = rospy.get_param("~sigma_2",200)
+    mu = rospy.get_param("~mu", 4.5)
  
     # Initialization of the class for the simple motion.
     ant_bot = Ant(sigma_1=sigma1, signma_2=sigma2, mu=mu)
