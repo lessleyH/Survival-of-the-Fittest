@@ -316,8 +316,8 @@ def main():
     #ant_bot.move()
 
     try:
-        #rospy.spin()
-        ant_bot.move()
+        rospy.spin()
+        #ant_bot.move()
 
     except rospy.ROSInterruptException:
         rospy.logerr("ROS node interrupted.")
