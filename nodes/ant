@@ -63,20 +63,20 @@ class Ant():
         rospy.loginfo("Hi, Ant in the move function")
         goal = self.randomize_direction()
         if not self.removed:  #if the ant is not dead
-            rospy.loginfo("Hi,Ant going to move_helper function")
+            # rospy.loginfo("Hi,Ant going to move_helper function")
             self.move_helper(goal)
   
         rospy.loginfo("waiting for nest update") 
         rospy.wait_for_service('/update_nest') 
 
         try: 
-            rospy.loginfo("NEST UPDATE WYA") 
+            # rospy.loginfo("NEST UPDATE WYA") 
             update_nest = rospy.ServiceProxy('/update_nest', UpdateNest)
             resp2 = update_nest(self.pos_x, self.pos_y, self.hasfood) 
             self.removed = resp2.outOfBounds
             self.hasfood = resp2.isNest
             self.ishome = resp2.isFood
-            rospy.loginfo("DONE UPDATING FROM NEST -ANT") 
+            # rospy.loginfo("DONE UPDATING FROM NEST -ANT") 
 
         except rospy.ServiceException as e:
             print("Service call failed in the move function in ant: %s"%e)
@@ -125,28 +125,28 @@ class Ant():
 
     def randomize_direction(self):
         "Function to randomize direction of the ant"
-        rospy.loginfo("Hi, waiting for serevice in rand. location")
+        #rospy.loginfo("Hi, waiting for serevice in rand. location")
         rospy.wait_for_service('/get_next_locations') 
 
         try: 
-            rospy.loginfo("Hi, server requested")
+            #rospy.loginfo("Hi, server requested")
             get_next_locations = rospy.ServiceProxy('/get_next_locations', GetNextLocations)
             resp1 = get_next_locations(self.pos_x, self.pos_y, self.orientation) 
             self.pheremones = [resp1.p1, resp1.p2, resp1.p3]
             self.potential_coordinates = [(resp1.x1, resp1.y1),(resp1.x2, resp1.y2),(resp1.x3, resp1.y3)]
-            rospy.loginfo("Hi, server requested DONE")
+            # rospy.loginfo("Hi, server requested DONE")
         except rospy.ServiceException as e:
-            rospy.loginfo("Service failed")
+            # rospy.loginfo("Service failed")
             print("Service call failed in the randomize direction function: %s"%e)
 
-        rospy.loginfo("Out of server calll")
+        # rospy.loginfo("Out of server calll")
         left_loc = self.potential_coordinates[0]
         front_loc = self.potential_coordinates[1]
         right_loc = self.potential_coordinates[2]
 
-        rospy.loginfo(left_loc)
-        rospy.loginfo(front_loc)
-        rospy.loginfo(right_loc)
+        # rospy.loginfo(left_loc)
+        # rospy.loginfo(front_loc)
+        # rospy.loginfo(right_loc)
 
         #Update the Pheremones 
         lp = self.pheremones[0]
@@ -160,13 +160,13 @@ class Ant():
         p_m = 0.5 * (1 + np.tanh((lp + fp + rp)/100 - 1))
         # if np.random.choice([0,1], 1, p=[1-p_m,p_m]):
         c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
-        rospy.loginfo(c)
+        # rospy.loginfo(c)
         p_left = 1/c * (self.mu + lp)**2
         p_front = 1/c * (self.mu + fp)**2
         p_right = 1/c * (self.mu + rp)**2
     
             
-        rospy.loginfo("ANT rnd choice") 
+        # rospy.loginfo("ANT rnd choice") 
 
         #normalizing probabilities 
         p_all = p_left + p_right + p_front
@@ -179,7 +179,7 @@ class Ant():
         else:
             next_loc = np.random.choice([1,2,3],1)
         
-        rospy.loginfo(next_loc)
+        # rospy.loginfo(next_loc)
         self.direction = next_loc #Updates direction for server 
 
         if next_loc == 1:
@@ -198,8 +198,8 @@ class Ant():
 
     def move_forward(self, distance):
         
-        rospy.loginfo("ANT moving forward") 
-        rospy.loginfo(distance) 
+        # rospy.loginfo("ANT moving forward") 
+        # rospy.loginfo(distance) 
         """Function to move_forward for a given distance."""
         # Rate at which to operate the while loop.
         rate = rospy.Rate(FREQUENCY)
@@ -207,30 +207,30 @@ class Ant():
         # Setting velocities. 
         twist_msg = Twist()
         twist_msg.linear.x = LINEAR_VELOCITY
-        rospy.loginfo("ANT setting linear velocity") 
+        # rospy.loginfo("ANT setting linear velocity") 
         start_time = rospy.get_rostime()
         duration = rospy.Duration(distance/twist_msg.linear.x)
 
         # Loop.
         while not rospy.is_shutdown():
-            rospy.loginfo("ANT In loop") 
+            # rospy.loginfo("ANT In loop") 
             # Check if traveled of given distance based on time.
             if rospy.get_rostime() - start_time >= duration:
                 break
 
             # Publish message.
             self._cmd_pub.publish(twist_msg)
-            rospy.loginfo("ANT move forward pub msg") 
+            # rospy.loginfo("ANT move forward pub msg") 
 
             # Sleep to keep the set publishing frequency.
             rate.sleep()
 
         # Traveled the required distance, stop.
         self.stop()
-        rospy.loginfo("ANT done moving forward") 
+        # rospy.loginfo("ANT done moving forward") 
         
     def rotate_in_place(self, rotation_angle):
-        rospy.loginfo("ANT rotating in place") 
+        # rospy.loginfo("ANT rotating in place") 
         """
         Rotate in place the robot of rotation_angle (rad) based on fixed velocity.
         Assumption: Counterclockwise rotation.
@@ -254,7 +254,7 @@ class Ant():
 
         # Rotated the required angle, stop.
         self.stop()
-        rospy.loginfo("ANT done rotating in place") 
+        # rospy.loginfo("ANT done rotating in place") 
 
     def move_helper(self, goal): 
         """Moves the robot to the goal."""
@@ -263,7 +263,7 @@ class Ant():
         rospy.loginfo(goal) 
         self.rotate_in_place(self.steering_angle(goal))
         self.move_forward(self.euclidean_distance(goal))
-        rospy.loginfo("ANT done with move helper") 
+        # rospy.loginfo("ANT done with move helper") 
 
   
     def euclidean_distance(self, goal):

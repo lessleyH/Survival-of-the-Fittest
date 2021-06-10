@@ -11,16 +11,14 @@ EVAPORATION_RATE = 0.06 #evaporation rate
 
 class Nest():
     def __init__(self, dimension, i, j, foods):
-        rospy.loginfo("NEST: in init")
-        #TODO:get food locaitons from god 
+        rospy.loginfo("NEST: in init") 
         self.nest_i = int(i)
         self.nest_j = int(j)
         self.nest_food_stash = 0
         self.grid = [ [0] * dimension for i in range(dimension)]
-        rospy.loginfo(foods)
         self.populate_food(foods)
         self.get_next_locations = rospy.Service('get_next_locations', GetNextLocations, self.handle_get_next_locations)
-        rospy.loginfo("NEST: Service for get next lcoations is up")
+        # rospy.loginfo("NEST: Service for get next lcoations is up")
         self.update_nest = rospy.Service('update_nest', UpdateNest, self.handle_nest_update)
         self.end_round = rospy.Service('end_round', EndRound, self.handle_end_round)
         rospy.loginfo("NEST: Done init node")
@@ -34,14 +32,14 @@ class Nest():
 
     #map coordinate to grid
     def pose_to_grid(self, x, y):
-        rospy.loginfo("NEST: Pose to grid")
+        # rospy.loginfo("NEST: Pose to grid")
         i = int(x + 20)
         j = int(y + 20)
         return (i,j)
 
     #map grid lcoation to pose
     def grid_to_pose(self, i, j):
-        rospy.loginfo("NEST: Grid to Pose")
+        # rospy.loginfo("NEST: Grid to Pose")
         x = int(i - 20) + 0.5
         y = int(j - 20) + 0.5
         return (x,y)
@@ -132,8 +130,7 @@ class Nest():
         rospy.loginfo("NEST: handle_get_next_locations")
         newPos = self.pose_to_grid(req.x, req.y)
         choices = self.get_choices(newPos[0], newPos[1], req.dir) #returns list of lists of choices with [x, y, phermones]
-        rospy.loginfo(choices)
-        #TODO: set each choice to a srv return variable
+        
         response = GetNextLocationsResponse()
         response.x1 = choices[0][0]
         response.y1 = choices[0][1]
@@ -175,21 +172,20 @@ class Nest():
 def main():
     """Main function."""
     rospy.wait_for_service('init_nest') 
-    rospy.loginfo("NEST: Waiting for service") 
+   # rospy.loginfo("NEST: Waiting for service") 
     try:
-        rospy.loginfo("NEST: Getting for service")
+        # rospy.loginfo("NEST: Getting for service")
         init_nest = rospy.ServiceProxy('init_nest', InitNest)
         response = init_nest()
         i = response.i
         j = response.j
         foods = response.foods
         foodss = foods.strip('')
-        rospy.loginfo(foodss)
+        # rospy.loginfo(foodss)
 
         foodSplit = foodss.split(' ')
-        rospy.loginfo(foodSplit)
+        # rospy.loginfo(foodSplit)
         foodList = [food.split(',') for food in foodSplit]
-        
 
         nest = Nest(40, i, j, foodList)
         rospy.loginfo("NEST: Done with service")
