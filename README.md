@@ -31,7 +31,7 @@ cd ~/catkin_ws
 catkin_make
 echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
-rosrun stage_ros stageros $(rospack find ant_foraging)/world/ant_world.world
+roslaunch ant_foraging ant_foraging.launch
 ```
 
 In the third terminal:
@@ -40,12 +40,7 @@ docker-compose exec ros bash
 source /opt/ros/melodic/setup.bash
 rosrun ant_foraging controller
 ```
-In the fourth terminal:
-```
-docker-compose exec ros bash
-source /opt/ros/melodic/setup.bash
-rosrun ant_foraging nest
-```
+
  ## Code Structure
  Main File Structure: 
 ```
