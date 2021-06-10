@@ -15,20 +15,13 @@ Send food locations to nest
 
 class Controller():
     def __init__(self, rounds):
-        rospy.loginfo("In init of controller") 
         self.rounds = rounds
         self.init_nest = rospy.Service('init_nest', InitNest, self.handle_init_nest)
         self.start_simulation()
-        rospy.loginfo("end of init in Controller node") 
 
     def start_simulation(self):
-        rospy.loginfo("Controller: Starting Simulation") 
-        for i in range(self.rounds):
-            rospy.loginfo("Controller: Round num:") 
-            rospy.loginfo(i) 
+        for i in range(self.rounds): 
             for ant in range(30):
-                rospy.loginfo("Controller: The ant we are on") 
-                rospy.loginfo(ant) 
                 self.ant_start_client(ant)
             self.end_round_client()
 
@@ -43,13 +36,11 @@ class Controller():
         
 
     def end_round_client(self):
-        rospy.loginfo("Controller: End Round client") 
         rospy.wait_for_service('end_round')
         try:
             end_round = rospy.ServiceProxy('end_round', EndRound)
             resp = end_round()
-            rospy.loginfo("Amount of Food After round is:") 
-            rospy.loginfo(resp.b)
+
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
@@ -57,7 +48,6 @@ class Controller():
     # foodType 0 = large and rare
     # foodType 1 = small and common
     def init_nest_variables(self, foodType):
-        rospy.loginfo("Controller: init nest variables") 
         i = random.randint(0,39)
         j = random.randint(0,39)
 
@@ -66,11 +56,11 @@ class Controller():
         amt = 0
 
         if foodType == 0:
-            num = 45
-            amt = 1000
+            num = 505
+            amt = 10000
         else:
-            num = 900
-            amt = 29
+            num = 1900
+            amt = 99
         
         food_loc = [ [0] * 40 for i in range(40)]
         food_loc[i][j] = 1
@@ -94,7 +84,6 @@ class Controller():
 
 
     def handle_init_nest(self, req):
-        rospy.loginfo("Controller: Handling init nests") 
 
         checks = self.init_nest_variables(1)
         response = InitNestResponse()
@@ -119,7 +108,6 @@ def main():
 if __name__ == "__main__":
     """Run the main function."""
     rospy.init_node('Controller') 
-    rospy.loginfo("Controller node init") 
     try:
         main()
     except rospy.ROSInterruptException:

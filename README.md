@@ -1,4 +1,4 @@
-Haowen Liu, Lessley Hernandez, and Danielle Fang
+Lessley Hernandez, Danielle Fang, and Haowen Liu,
 
 <h1 align="center">Survival of the Fittest</h1>
 
@@ -231,6 +231,13 @@ def handle_end_round(self, req):
 def evaporate(self):
 
 ```
+### Contribution 
+- We all worked on reading, understanding and discussing the problem.
+- Danielle and Lessley worked on the ant, controller, nest, launch, services, documentation, code clearning, and bug hunting.
+- Haowen worked on the python demo and debugging the launch file.  
+
+
+### Demo 
 
 <details>
 <summary><b>Refrences</b></summary>
