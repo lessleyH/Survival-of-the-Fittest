@@ -113,6 +113,16 @@ class Ant():
                 self.flip_dir = False
                 rospy.loginfo("Hi, made it back!")
 
+            if self._close_obstacle: 
+                self.flip_dir = True
+                self.mu = self.mu_og
+                
+                vel_msg = Twist()
+                vel_msg.angular.z = (180*math.pi)/180 #Rotates 180 to return home
+                # Publishing our vel_msg
+                self._cmd_pub.publish(vel_msg)
+                self.flip_dir = False
+
     def randomize_direction(self):
         "Function to randomize direction of the ant"
         rospy.loginfo("Hi, waiting for serevice in rand. location")
