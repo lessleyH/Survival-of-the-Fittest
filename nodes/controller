@@ -26,13 +26,13 @@ class Controller():
         for i in range(self.rounds):
             rospy.loginfo("Controller: Round num:") 
             rospy.loginfo(i) 
-            for ant in range(10):
+            for ant in range(30):
+                rospy.loginfo("Controller: This is the ant we are on:") 
+                rospy.loginfo(ant) 
                 self.ant_start_client(ant)
             self.end_round_client()
 
     def ant_start_client(self, num):
-            rospy.loginfo("Controller: Ant-start Client") 
-            rospy.loginfo(num) 
             rospy.wait_for_service('/robot_{}/ant_start'.format(num), 0.5)
             try:
                 ant_start = rospy.ServiceProxy('/robot_{}/ant_start'.format(num), AntStart)
@@ -66,12 +66,11 @@ class Controller():
         amt = 0
 
         if foodType == 0:
-            num = 5
-            amt = 20
+            num = 45
+            amt = 100
         else:
-            num = 20
+            num = 900
             amt = 5
-        
 
         for i in range(num):
             rand_x = str(random.randint(0,39))
