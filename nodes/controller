@@ -56,8 +56,8 @@ class Controller():
     # foodType 1 = small and common
     def init_nest_variables(self, foodType):
         rospy.loginfo("Controller: init nest variables") 
-        i = random.randint(0,40)
-        j = random.randint(0,40)
+        i = random.randint(0,39)
+        j = random.randint(0,39)
 
         points = []
         num = 0

@@ -11,10 +11,10 @@ from sensor_msgs.msg import LaserScan # message type for scan
 from ant_foraging.srv import GetNextLocations, UpdateNest, InitNest, GetNextLocationsResponse, UpdateNestResponse, AntStart, AntStartResponse
 
 # Constants.
-FREQUENCY = 10 #Hz
-LINEAR_VELOCITY = 0.5 # m/s
+FREQUENCY = 30 #Hz
+LINEAR_VELOCITY = 1 # m/s
 ANGULAR_VELOCITY = math.pi/4 # rad/s
-LASER_ANGLE_FRONT = 0 # radians
+LASER_ANGLE_FRONT = 1 # radians
 MIN_THRESHOLD_DISTANCE = 1.5 # m, threshold distance.
 LINEAR_VELOCITY_CONSTANT = 1.5
 
@@ -74,8 +74,8 @@ class Ant():
             update_nest = rospy.ServiceProxy('/update_nest', UpdateNest)
             resp2 = update_nest(self.pos_x, self.pos_y, self.hasfood) 
             self.removed = resp2.outOfBounds
-            self.hasfood = resp2.isFood
-            self.ishome = resp2.isNest
+            self.hasfood = resp2.isNest
+            self.ishome = resp2.isFood
             # rospy.loginfo("DONE UPDATING FROM NEST -ANT") 
 
         except rospy.ServiceException as e:
@@ -161,6 +161,8 @@ class Ant():
         # if np.random.choice([0,1], 1, p=[1-p_m,p_m]):
         c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
         # rospy.loginfo(c)
+        if c == 0:
+            c = 1
         p_left = 1/c * (self.mu + lp)**2
         p_front = 1/c * (self.mu + fp)**2
         p_right = 1/c * (self.mu + rp)**2
@@ -263,7 +265,7 @@ class Ant():
         rospy.loginfo(goal) 
         self.rotate_in_place(self.steering_angle(goal))
         self.move_forward(self.euclidean_distance(goal))
-        # rospy.loginfo("ANT done with move helper") 
+        #rospy.loginfo("ANT done with move helper") 
 
   
     def euclidean_distance(self, goal):

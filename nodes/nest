@@ -29,7 +29,6 @@ class Nest():
         #place each food on grid
         for food in food_list:
             self.grid[int(food[0])][int(food[1])] = -int(food[2])
-        rospy.loginfo(self.grid)
 
     #map coordinate to grid
     def pose_to_grid(self, x, y):
@@ -97,6 +96,8 @@ class Nest():
         gridpts = self.pose_to_grid(x, y)
         i = gridpts[0]
         j = gridpts[1]
+        rospy.loginfo(gridpts)
+        rospy.loginfo(self.grid[i][j])
         result = []
         #check out of bounds
         if i < 0 or i > len(self.grid) or j < 0 or j > len(self.grid[0]):
@@ -121,7 +122,7 @@ class Nest():
             result.append(0)
 
         #if not above, update phermone
-        if sum(result) == 0:
+        if result[0] + result[1] + result[2] > 0:
             self.grid[i][j] += DEPOSIT_RATE
 
         rospy.loginfo("NEST: Sending results")
