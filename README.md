@@ -4,9 +4,12 @@ Haowen Liu, Lessley Hernandez, and Danielle Fang
 
 Final project for multi-system robotics on foraging with ant optimization. 
 
+Abstract— Animal behavior has inspired many algorithms and strategies in robotics work due to the efficiency of these systems honed by nature. In this work we explore ant foraging behavior of how ants are able to efficiently gather food through implicit coordination using the pheromone trails deposited as the ant travels. We use a virtual environment stage to efficiently model a large swarm of ants foraging in food in an unknown grid representation of a map. We then run experiments altering different environmental factors such as population of ants in the field and type of food source available to discover which scenario is able to maximize the amount of food foraged
+
 ## Requirments 
 - ROS -- tested on Melodic, but other versions may work.
 - colcon -- used for building the application.
+- stage_ros -- used for simulation
 
 ## Build
 Once cloned in a ROS workspace, e.g., ros_workspace/src/, run the following commands to build it:
@@ -15,30 +18,224 @@ git clone: https://github.com/lessleyH/Survival-of-the-Fittest.git
 
 First terminal: 
 Assuming running VNC-ROS 
- `docker-compose exec ros bash`
- `source /opt/ros/melodic/setup.bash`
-`roscore`
-
+```
+docker-compose exec ros bash
+source /opt/ros/melodic/setup.bash
+roscore
+```
 In the second terminal:
-`docker-compose exec ros bash`
-`source /opt/ros/melodic/setup.bash`
-`cd ~/catkin_ws`
-`catkin_make`
-`echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc`
-`source ~/.bashrc`
-`rosrun stage_ros stageros $(rospack find ant_foraging)/world/ant_world.world`
+```
+docker-compose exec ros bash
+source /opt/ros/melodic/setup.bash
+cd ~/catkin_ws
+catkin_make
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+rosrun stage_ros stageros $(rospack find ant_foraging)/world/ant_world.world
+```
 
 In the third terminal:
-`docker-compose exec ros bash`
-`source /opt/ros/melodic/setup.bash`
-`rosrun ant_foraging controller`
-
+```
+docker-compose exec ros bash
+source /opt/ros/melodic/setup.bash
+rosrun ant_foraging controller
+```
 In the fourth terminal:
-`docker-compose exec ros bash`
-`source /opt/ros/melodic/setup.bash`
-`rosrun ant_foraging nest`
-
+```
+docker-compose exec ros bash
+source /opt/ros/melodic/setup.bash
+rosrun ant_foraging nest
+```
  ## Code Structure
+ Main File Structure: 
+```
+Survival-of-the-Fittest
+├─ CMakeLists.txt
+├─ LICENSE
+├─ README.md
+├─ launch
+│  └─ ant_foraging.launch
+├─ nodes
+│  ├─ ant
+│  ├─ controller
+│  └─ nest
+├─ package.xml
+├─ setup.py
+├─ src
+│  └─ ant_foraging
+│     └─ __init__.py
+├─ srv
+│  ├─ AntStart.srv
+│  ├─ EndRound.srv
+│  ├─ GetNextLocations.srv
+│  ├─ InitNest.srv
+│  └─ UpdateNest.srv
+├─ stage_config
+│  ├─ maps
+│  └─ worlds
+└─ world
+   └─ ant_world.world
+```
+
+## Nodes
+### Ant
+Main python class that deals with the movement of the ant bots.  
+
+```python
+#Parameters: positive float - sigma_1, positive float - sigma_2, positive float - mu 
+#Purpose: This function initializes the class of ants 
+#Returns: None
+def __init__(self, sigma_1, signma_2, mu):
+
+#Parameters: None
+#Purpose: This function is to move the robot in the desired direction and check if it has food, removed, or is home
+#Returns: None
+def move(self):
+
+#Parameters: None
+#Purpose: This function to randomize direction of the ant and communicates with nest on possible steps
+#Returns: goal type:Pos, that sets the new goal for movement of the ant 
+def randomize_direction(self):
+
+#Parameters: float - distance 
+#Purpose: This function moves the ant forward and from simple motion
+#Returns: distance type: float
+def move_forward(self, distance):
+
+#Parameters: rotation_angle - radians
+#Purpose: This function rotates the ant and from simple motion
+#Returns: None
+def rotate_in_place(self, rotation_angle):
+
+#Parameters: goal - Pos
+#Purpose: This function handles the ros calls for the move function
+#Returns: None
+def move_helper(self, goal): 
+
+#Parameters: goal - Pos
+#Purpose: This function calculated euclidian distance from current position and goals
+#Returns: distance - float
+def euclidean_distance(self, goal):
+
+#Parameters: goal -Pos
+#Purpose: This function returns the angle to steer in 
+#Returns: radian value of angle
+def steering_angle(self, goal):
+
+#Parameters: goal- Pos, constant - int
+#Purpose: This function calculates the angular velocity of the robot
+#Returns: returns the angular velocity - float 
+def angular_vel(self, goal, constant=6):
+
+#Parameters: data
+#Purpose: Processing of odom position message and sets current position
+#Returns: None
+def _pos_callback(self, data):
+
+#Parameters: None 
+#Purpose: Stop the robot. Borrowed from Simple Motion
+#Returns: None
+def stop(self):
+
+#Parameters: msg  
+#Purpose: Processing of laser message. Borrowed from Simple Motion
+#Returns: None
+def _laser_callback(self, msg):
+
+#Parameters: req
+#Purpose: This function gets the callback message of the ant start service
+#Returns: None
+def _ant_start_callback(self, req):
+```
+
+### Controller 
+Main python class that deals with the controller of the simulation that controls when the rounds starts and ends.This class also sends message to nest when round has ended and send food locations to nest. 
+```python
+
+#Parameters: rounds - int
+#Purpose: This function initializes the class controller 
+#Returns: None
+def __init__(self, rounds):
+
+#Parameters: req
+#Purpose: This function starts the simulation 
+#Returns: None
+def start_simulation(self):
+
+#Parameters:  num - int the amount of robots
+#Purpose: This function is to reach out and signal when a round begins
+#Returns: None
+def ant_start_client(self, num):
+
+#Parameters: num
+#Purpose:  This function is to reach out and signal when a round ends
+#Returns: None
+def end_round_client(self, num):
+
+#Parameters: foodType
+#Purpose: This function initializes nest variables for food 
+#Returns: None
+def init_nest_variables(self, foodType):
+
+#Parameters: req
+#Purpose: This function checks the nest initilization 
+#Returns: None
+def handle_init_nest(self, req):
+```
+### Nest
+
+```python
+#Parameters: dimensions - int, i -int, j- int, foods- list 
+#Purpose: This function initilizaes the enst class taking i nthe dimensions and foods
+#Returns: None
+def __init__(self, dimension, i, j, foods):
+
+#Parameters: food_list -list
+#Purpose: This function populates the food onto the grid
+#Returns: None
+def populate_food(self, food_list):
+
+#Parameters: x- int, y - int
+#Purpose: This is the map of the coordinates on the grid
+#Returns: returns coordinates
+def pose_to_grid(self, x, y):
+
+#Parameters: i - int, j - int
+#Purpose: This is the coordinates to the grid
+#Returns: returns coordinates 
+def grid_to_pose(self, i, j):
+
+#Parameters: i - int, j - int, direction - int
+#Purpose: This function gets the choices the ant can move to 
+#Returns: None
+def get_choices(self, i, j, direction):
+
+#Parameters: x- int, y - int, hasFood - Boolean 
+#Purpose: This function updates the nest and the food
+#Returns: the results of these updates
+def update_the_nest(self, x, y, hasFood):
+
+#Parameters: req
+#Purpose: Handles the call for next location to the ant 
+#Returns: None
+def handle_get_next_locations(self, req):
+
+#Parameters: req
+#Purpose: Handles the nest updates to the ant 
+#Returns: None
+def handle_nest_update(self, req):
+
+#Parameters: req
+#Purpose: This function checks for the end of the round 
+#Returns: None
+def handle_end_round(self, req):
+
+#Parameters: None
+#Purpose: This function evaporates the ants from the grid and map
+#Returns: None
+def evaporate(self):
+
+```
 
 <details>
 <summary><b>Refrences</b></summary>
