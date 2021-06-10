@@ -20,7 +20,7 @@ LINEAR_VELOCITY_CONSTANT = 1.5
 
 DEFAULT_ODOM_TOPIC = '/odom'
 DEFAULT_SCAN_TOPIC = '/scan'
-DEFAULT_CMD_VEL_TOPIC = 'cmd_vel'
+DEFAULT_CMD_VEL_TOPIC = '/cmd_vel'
 
 class Ant():
     def __init__(self, sigma_1, signma_2, mu):
@@ -74,8 +74,8 @@ class Ant():
             update_nest = rospy.ServiceProxy('/update_nest', UpdateNest)
             resp2 = update_nest(self.pos_x, self.pos_y, self.hasfood) 
             self.removed = resp2.outOfBounds
-            self.hasfood = resp2.isNest
-            self.ishome = resp2.isFood
+            self.hasfood = resp2.isFood
+            self.ishome = resp2.isNest
             rospy.loginfo("DONE UPDATING FROM NEST -ANT") 
 
         except rospy.ServiceException as e:
@@ -214,7 +214,12 @@ class Ant():
             # Check if traveled of given distance based on time.
             if rospy.get_rostime() - start_time >= duration:
                 break
-
+            
+            # if self._close_obstacle: 
+            #     twist_msg.angular.z = (180*math.pi)/180 #Rotates 180 to return home
+            #     # Publishing our vel_msg
+            #     self._cmd_pub.publish(twist_msg)
+            #     self.flip_dir = False
             # Publish message.
             self._cmd_pub.publish(twist_msg)
             rospy.loginfo("ANT move forward pub msg") 
