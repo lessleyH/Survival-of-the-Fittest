@@ -26,7 +26,10 @@ class Controller():
         for i in range(self.rounds):
             rospy.loginfo("Controller: Round num:") 
             rospy.loginfo(i) 
-            self.ant_start_client(1)
+            for ant in range(10):
+                self.ant_start_client(ant)
+                rospy.loginfo("Controller: Ant num:") 
+                rospy.loginfo(ant) 
             self.end_round_client()
 
     def ant_start_client(self, num):

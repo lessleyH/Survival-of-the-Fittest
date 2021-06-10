@@ -20,6 +20,7 @@ class Nest():
         rospy.loginfo(foods)
         self.populate_food(foods)
         self.get_next_locations = rospy.Service('get_next_locations', GetNextLocations, self.handle_get_next_locations)
+        rospy.loginfo("NEST: Service for get next lcoations is up")
         self.update_nest = rospy.Service('update_nest', UpdateNest, self.handle_nest_update)
         self.end_round = rospy.Service('end_round', EndRound, self.handle_end_round)
         rospy.loginfo("NEST: Done init node")

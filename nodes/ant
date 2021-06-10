@@ -67,10 +67,11 @@ class Ant():
             self.move_helper(goal)
   
         rospy.loginfo("waiting for nest update") 
-        rospy.wait_for_service('update_nest') 
+        rospy.wait_for_service('/update_nest') 
+
         try: 
             rospy.loginfo("NEST UPDATE WYA") 
-            update_nest = rospy.ServiceProxy('update_nest', UpdateNest)
+            update_nest = rospy.ServiceProxy('/update_nest', UpdateNest)
             resp2 = update_nest(self.pos_x, self.pos_y, self.hasfood) 
             self.removed = resp2.outOfBounds
             self.hasfood = resp2.isNest
@@ -115,11 +116,11 @@ class Ant():
     def randomize_direction(self):
         "Function to randomize direction of the ant"
         rospy.loginfo("Hi, waiting for serevice in rand. location")
-        rospy.wait_for_service('get_next_locations') 
+        rospy.wait_for_service('/get_next_locations') 
 
         try: 
             rospy.loginfo("Hi, server requested")
-            get_next_locations = rospy.ServiceProxy('get_next_locations', GetNextLocations)
+            get_next_locations = rospy.ServiceProxy('/get_next_locations', GetNextLocations)
             resp1 = get_next_locations(self.pos_x, self.pos_y, self.orientation) 
             self.pheremones = [resp1.p1, resp1.p2, resp1.p3]
             self.potential_coordinates = [(resp1.x1, resp1.y1),(resp1.x2, resp1.y2),(resp1.x3, resp1.y3)]
