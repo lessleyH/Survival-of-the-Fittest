@@ -42,13 +42,14 @@ class Controller():
                 print("Service call failed: %s"%e)
         
 
-    def end_round_client(self, num):
+    def end_round_client(self):
         rospy.loginfo("Controller: End Round client") 
         rospy.wait_for_service('end_round')
         try:
             end_round = rospy.ServiceProxy('end_round', EndRound)
             resp = end_round()
-            return resp.b
+            rospy.loginfo("Amount of Food After round is:") 
+            rospy.loginfo(resp.b)
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
@@ -69,7 +70,7 @@ class Controller():
             amt = 20
         else:
             num = 20
-            amt = 4
+            amt = 5
         
 
         for i in range(num):

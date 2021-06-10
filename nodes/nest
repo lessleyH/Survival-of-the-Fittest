@@ -162,7 +162,7 @@ class Nest():
     def handle_end_round(self, req):
         rospy.loginfo("NEST: end_round_update")
         self.evaporate()
-        return EndRoundResponse(1)
+        return EndRoundResponse(self.nest_food_stash)
 
 
     # after each round, evaporate
