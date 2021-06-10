@@ -55,7 +55,8 @@
 <!--node pkg="ant_foraging" type="ant_foraging" name="Ant" output="screen"/>
 <node pkg="ant_foraging" type="ant_foraging" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2 _mu:=$(arg mu))" name="Ant" output="screen"/>
   -->
-
+  <node pkg="ant_foraging" type="nest" name="Nest" output="screen"/>
+  
 
  <!-- BEGIN ROBOTS -->
   <group ns = "$(arg bot_0)">
