@@ -29,6 +29,7 @@ class Nest():
         #place each food on grid
         for food in food_list:
             self.grid[int(food[0])][int(food[1])] = -int(food[2])
+        rospy.loginfo(self.grid)
 
     #map coordinate to grid
     def pose_to_grid(self, x, y):

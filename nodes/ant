@@ -74,8 +74,8 @@ class Ant():
             update_nest = rospy.ServiceProxy('/update_nest', UpdateNest)
             resp2 = update_nest(self.pos_x, self.pos_y, self.hasfood) 
             self.removed = resp2.outOfBounds
-            self.hasfood = resp2.isNest
-            self.ishome = resp2.isFood
+            self.hasfood = resp2.isFood
+            self.ishome = resp2.isNest
             # rospy.loginfo("DONE UPDATING FROM NEST -ANT") 
 
         except rospy.ServiceException as e:
