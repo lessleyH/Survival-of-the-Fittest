@@ -13,7 +13,7 @@
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
 
- <arg name="bot_0"  default="robot_0"/>
+  <arg name="bot_0"  default="robot_0"/>
   <arg name="bot_1" default="robot_1"/>
   <arg name="bot_2"  default="robot_2"/>
   <arg name="bot_3"  default="robot_3"/>
@@ -23,6 +23,26 @@
   <arg name="bot_7"  default="robot_7"/>
   <arg name="bot_8"  default="robot_8"/>
   <arg name="bot_9"  default="robot_9"/>
+  <arg name="bot_10"  default="robot_10"/>
+  <arg name="bot_11" default="robot_11"/>
+  <arg name="bot_12"  default="robot_12"/>
+  <arg name="bot_13"  default="robot_13"/>
+  <arg name="bot_14"  default="robot_14"/>
+  <arg name="bot_15"  default="robot_15"/>
+  <arg name="bot_16"  default="robot_16"/>
+  <arg name="bot_17"  default="robot_17"/>
+  <arg name="bot_18"  default="robot_18"/>
+  <arg name="bot_19"  default="robot_19"/>
+  <arg name="bot_20"  default="robot_20"/>
+  <arg name="bot_21" default="robot_21"/>
+  <arg name="bot_22"  default="robot_22"/>
+  <arg name="bot_23"  default="robot_23"/>
+  <arg name="bot_24"  default="robot_24"/>
+  <arg name="bot_25"  default="robot_25"/>
+  <arg name="bot_26"  default="robot_26"/>
+  <arg name="bot_27"  default="robot_27"/>
+  <arg name="bot_28"  default="robot_28"/>
+  <arg name="bot_29"  default="robot_29"/>
 
   <arg name="sigma_1" default="1"/>
   <arg name="sigma_2" default="1"/>
@@ -70,6 +90,67 @@
   <group ns = "$(arg bot_9)">
     <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
   </group>
+  <group ns = "$(arg bot_10)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_11)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_12)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_13)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_14)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_15)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_16)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_17)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_18)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_19)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_20)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_21)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_22)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_23)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_24)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_25)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_26)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_27)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_28)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+  <group ns = "$(arg bot_29)">
+    <node pkg="ant_foraging" type="ant" args="_sigma_1:=$(arg sigma_1) _sigma_2:=$(arg sigma_2) _mu:=$(arg mu)" name="Ant" output="screen"/>
+  </group>
+
 
   
 

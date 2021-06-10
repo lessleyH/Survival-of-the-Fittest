@@ -53,44 +53,35 @@ class Ant():
         self.mu_og = mu
         self.mu = mu # Dictates how much ant favors movement towarsds empty cells 
         self.potential_coordinates = None
-        self._close_obstacle = False # TODO: Fix obstacle location
+        self._close_obstacle = False 
 
         self.orientation = 0
-        rospy.loginfo("Hi, set up ant done")
 
     def move(self): 
         "Function to move the robot in the desired direction and check if it has food, removed, or is home"
-        rospy.loginfo("Hi, Ant in the move function")
         goal = self.randomize_direction()
         if not self.removed:  #if the ant is not dead
-            # rospy.loginfo("Hi,Ant going to move_helper function")
             self.move_helper(goal)
-  
-        rospy.loginfo("waiting for nest update") 
+
         rospy.wait_for_service('/update_nest') 
 
         try: 
-            # rospy.loginfo("NEST UPDATE WYA") 
             update_nest = rospy.ServiceProxy('/update_nest', UpdateNest)
             resp2 = update_nest(self.pos_x, self.pos_y, self.hasfood) 
             self.removed = resp2.outOfBounds
             self.hasfood = resp2.isFood
             self.ishome = resp2.isNest
-            # rospy.loginfo("DONE UPDATING FROM NEST -ANT") 
 
         except rospy.ServiceException as e:
             print("Service call failed in the move function in ant: %s"%e)
 
-        rospy.loginfo("CHEKCING IF REMOVED") 
         if self.removed: 
             self.pos_x = 0
             self.pos_z = 0
             self.stop()
 
         else:
-            rospy.loginfo("CHECKING FOR FOOD OR HOME") 
             if self.hasfood:
-                rospy.loginfo("WE HAVE FOOD") 
                 self.flip_dir = True 
                 self.mu = 1.5 # threshold for pheremones is stronger 
 
@@ -101,7 +92,6 @@ class Ant():
                 self.flip_dir = False
 
             if self.ishome:
-                rospy.loginfo("WE ARE HOME") 
                 self.hasfood = False
                 self.flip_dir = True
                 self.mu = self.mu_og
@@ -111,7 +101,6 @@ class Ant():
                 # Publishing our vel_msg
                 self._cmd_pub.publish(vel_msg)
                 self.flip_dir = False
-                rospy.loginfo("Hi, made it back!")
 
             if self._close_obstacle: 
                 self.flip_dir = True
@@ -125,48 +114,32 @@ class Ant():
 
     def randomize_direction(self):
         "Function to randomize direction of the ant"
-        #rospy.loginfo("Hi, waiting for serevice in rand. location")
         rospy.wait_for_service('/get_next_locations') 
 
         try: 
-            #rospy.loginfo("Hi, server requested")
             get_next_locations = rospy.ServiceProxy('/get_next_locations', GetNextLocations)
             resp1 = get_next_locations(self.pos_x, self.pos_y, self.orientation) 
             self.pheremones = [resp1.p1, resp1.p2, resp1.p3]
             self.potential_coordinates = [(resp1.x1, resp1.y1),(resp1.x2, resp1.y2),(resp1.x3, resp1.y3)]
-            # rospy.loginfo("Hi, server requested DONE")
         except rospy.ServiceException as e:
-            # rospy.loginfo("Service failed")
             print("Service call failed in the randomize direction function: %s"%e)
 
-        # rospy.loginfo("Out of server calll")
         left_loc = self.potential_coordinates[0]
         front_loc = self.potential_coordinates[1]
         right_loc = self.potential_coordinates[2]
-
-        # rospy.loginfo(left_loc)
-        # rospy.loginfo(front_loc)
-        # rospy.loginfo(right_loc)
 
         #Update the Pheremones 
         lp = self.pheremones[0]
         fp = self.pheremones[1]
         rp = self.pheremones[2]
 
-        # p_left = 0
-        # p_right = 0  
-        # p_front = 0
 
         p_m = 0.5 * (1 + np.tanh((lp + fp + rp)/100 - 1))
-        # if np.random.choice([0,1], 1, p=[1-p_m,p_m]):
         c = (self.mu + lp)**2 + (self.mu + fp)**2 + (self.mu + rp)**2
-        # rospy.loginfo(c)
         p_left = 1/c * (self.mu + lp)**2
         p_front = 1/c * (self.mu + fp)**2
         p_right = 1/c * (self.mu + rp)**2
     
-            
-        # rospy.loginfo("ANT rnd choice") 
 
         #normalizing probabilities 
         p_all = p_left + p_right + p_front
@@ -179,7 +152,6 @@ class Ant():
         else:
             next_loc = np.random.choice([1,2,3],1)
         
-        # rospy.loginfo(next_loc)
         self.direction = next_loc #Updates direction for server 
 
         if next_loc == 1:
@@ -197,9 +169,6 @@ class Ant():
         return goal
 
     def move_forward(self, distance):
-        
-        # rospy.loginfo("ANT moving forward") 
-        # rospy.loginfo(distance) 
         """Function to move_forward for a given distance."""
         # Rate at which to operate the while loop.
         rate = rospy.Rate(FREQUENCY)
@@ -207,30 +176,25 @@ class Ant():
         # Setting velocities. 
         twist_msg = Twist()
         twist_msg.linear.x = LINEAR_VELOCITY
-        # rospy.loginfo("ANT setting linear velocity") 
         start_time = rospy.get_rostime()
         duration = rospy.Duration(distance/twist_msg.linear.x)
 
         # Loop.
         while not rospy.is_shutdown():
-            # rospy.loginfo("ANT In loop") 
             # Check if traveled of given distance based on time.
             if rospy.get_rostime() - start_time >= duration:
                 break
 
             # Publish message.
             self._cmd_pub.publish(twist_msg)
-            # rospy.loginfo("ANT move forward pub msg") 
 
             # Sleep to keep the set publishing frequency.
             rate.sleep()
 
         # Traveled the required distance, stop.
         self.stop()
-        # rospy.loginfo("ANT done moving forward") 
         
     def rotate_in_place(self, rotation_angle):
-        # rospy.loginfo("ANT rotating in place") 
         """
         Rotate in place the robot of rotation_angle (rad) based on fixed velocity.
         Assumption: Counterclockwise rotation.
@@ -254,26 +218,18 @@ class Ant():
 
         # Rotated the required angle, stop.
         self.stop()
-        # rospy.loginfo("ANT done rotating in place") 
 
     def move_helper(self, goal): 
         """Moves the robot to the goal."""
-
-        rospy.loginfo("ANT Move helper function") 
-        rospy.loginfo(goal) 
         self.rotate_in_place(self.steering_angle(goal))
         self.move_forward(self.euclidean_distance(goal))
-        # rospy.loginfo("ANT done with move helper") 
-
   
     def euclidean_distance(self, goal):
         """Euclidean distance between current pose and the goal."""
-        rospy.loginfo("ANT Euclidean dist") 
         return math.sqrt(math.pow((goal.position.x - self.pos_x), 2) + math.pow((goal.position.y - self.pos_y), 2))
 
 
     def steering_angle(self, goal):
-        rospy.loginfo("ANT steering angle") 
         """helper function to angular velocity to help steer"""
         orientation = math.atan2(goal.position.y - self.pos_y, goal.position.x - self.pos_x)
         self.orientation += orientation
@@ -317,12 +273,11 @@ def main():
     # Set parameters
     sigma1 = rospy.get_param("~sigma_1",48)
     sigma2 = rospy.get_param("~sigma_2",200)
-    mu = rospy.get_param("~mu", 4.5)
+    mu = rospy.get_param("~mu", 10.5)
  
     # Initialization of the class for the simple motion.
     ant_bot = Ant(sigma_1=sigma1, signma_2=sigma2, mu=mu)
 
-    rospy.loginfo("Hi, I'm init")
     #ant_bot.move()
 
     try:
@@ -339,7 +294,6 @@ if __name__ == "__main__":
     """Run the main function."""
     
     rospy.init_node('Ant')
-    rospy.loginfo("Hi, I'm an ant")
     try:
         
         main()

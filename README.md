@@ -1,4 +1,4 @@
-Haowen Liu, Lessley Hernandez, and Danielle Fang
+Lessley Hernandez, Danielle Fang, and Haowen Liu,
 
 <h1 align="center">Survival of the Fittest</h1>
 
@@ -31,7 +31,7 @@ cd ~/catkin_ws
 catkin_make
 echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
-rosrun stage_ros stageros $(rospack find ant_foraging)/world/ant_world.world
+roslaunch ant_foraging ant_foraging.launch
 ```
 
 In the third terminal:
@@ -40,12 +40,7 @@ docker-compose exec ros bash
 source /opt/ros/melodic/setup.bash
 rosrun ant_foraging controller
 ```
-In the fourth terminal:
-```
-docker-compose exec ros bash
-source /opt/ros/melodic/setup.bash
-rosrun ant_foraging nest
-```
+
  ## Code Structure
  Main File Structure: 
 ```
@@ -236,6 +231,14 @@ def handle_end_round(self, req):
 def evaporate(self):
 
 ```
+
+### Demo 
+![hippo](https://media.giphy.com/media/Er5tI8BcBehwpvJB4U/giphy.gif)
+
+### Contribution 
+- We all worked on reading, understanding and discussing the problem.
+- Danielle and Lessley worked on the ant, controller, nest, launch, services, documentation, code clearning, and bug hunting.
+- Haowen worked on the python demo and debugging the launch file.  
 
 <details>
 <summary><b>Refrences</b></summary>
